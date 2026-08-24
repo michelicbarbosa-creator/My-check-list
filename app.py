@@ -204,7 +204,7 @@ with tab2:
 # 📑 BOX 3: DOCUMENTATION
 # ==========================================
 with tab3:
-    st.header("3️⃣ 3: Sample Garment")
+    st.header("3️⃣ BOX 3: Active Component Database Overview")
     if not df_components.empty:
         sub_tabs = st.tabs(detailed_categories)
         for idx, name_cat in enumerate(detailed_categories):
@@ -212,8 +212,10 @@ with tab3:
                 df_f = df_components[df_components["category"] == name_cat]
                 if not df_f.empty:
                     st.dataframe(df_f[["material_name", "doc_type", "certificate_num", "expiry_date", "mockup_status", "mockup_approved", "production_order", "related_articles", "seam_ready_qty", "seam_sent_oeti_qtd", "comments"]], use_container_width=True)
-    else: st.info(f"No active validation logs found for {name_cat}.")
-    else: st.info(f"No items mapped to database records yet.")
+                else:
+                    st.info("No active validation logs found for this specific category.")
+    else:
+        st.info("No items mapped to database records yet.")
 
 # ==========================================
 # 📑 BOX 4: DOCUMENTATION
