@@ -177,7 +177,7 @@ with tab1:
 # ==========================================
 with tab2:
   st.header("2️⃣ 2: Technical Documentation ")
-    if not df_checklist.empty:
+  if not df_checklist.empty:
         conn = connect_db()
         f_box2 = df_checklist[df_checklist["box_num"] == "2"]
         for idx, r in f_box2.iterrows():
