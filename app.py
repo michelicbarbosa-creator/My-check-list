@@ -128,7 +128,7 @@ today = date.today()
 
 st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📦 BOX 1: Expiry & Add", "📑 BOX 2: Documentation", "🛠️ BOX 3: Database Logs", "👕 BOX 4: Samples & Mock-ups", "🏁 BOX 5: Finalisation"
+    "📦 1: Documentation", "📑 2: Technical Documentation", ""👕 BOX 3: sample garmwnt", "👕 BOX 4: Samples Mock-ups", "🏁 BOX 5: Finalisation"
 ])
 
 # ==========================================
