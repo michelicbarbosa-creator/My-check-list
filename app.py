@@ -163,8 +163,8 @@ with tab1:
                     conn = connect_db()
                     conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
                     conn.commit()
-                    conn.close()
-     with tab 2:
+                    conn.cl
+    with tab 2:
     st.header("2️⃣ 2: Technical Documentation ")
     if not df_checklist.empty:
         conn = connect_db()
