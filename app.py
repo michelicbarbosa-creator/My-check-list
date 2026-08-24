@@ -1,10 +1,14 @@
-import streamlit as st
+
+  import streamlit as st
 import pandas as pd
 import sqlite3
 from datetime import date, datetime
 
 st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification System 2026")
 
+# ==========================================
+# DATABASE CONNECTION & INITIALIZATION
+# ==========================================
 def connect_db():
     return sqlite3.connect("oeko_tex_isolated_tabs_v16.db")
 
@@ -128,6 +132,9 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📦 BOX 1: Expiry & Add", "📑 BOX 2: Documentation", "🛠️ BOX 3: Database Logs", "👕 BOX 4: Samples & Mock-ups", "🏁 BOX 5: Finalisation"
 ])
 
+# ==========================================
+# 1️⃣ BOX 1: EXPIRY & ADD
+# ==========================================
 with tab1:
     st.header("1️⃣ BOX 1: Certificate Expiry Control")
     alarms_triggered = []
@@ -163,9 +170,14 @@ with tab1:
                     conn = connect_db()
                     conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
                     conn.commit()
-                    conn.cl
-    with tab 2:
-    st.header("2️⃣ 2: Technical Documentation ")
+                    conn.close()
+                    st.rerun()
+
+# ==========================================
+# 📑 BOX 2: DOCUMENTATION
+# ==========================================
+with tab2:
+  st.header("2️⃣ 2: Technical Documentation ")
     if not df_checklist.empty:
         conn = connect_db()
         f_box2 = df_checklist[df_checklist["box_num"] == "2"]
@@ -188,6 +200,10 @@ with tab1:
         conn.close()
     else: st.info("No checklist benchmarks found for this project code.")
            st.rerun()
+
+# ==========================================
+# 📑 BOX 3: DOCUMENTATION
+# ==========================================
 with tab3:
     st.header("3️⃣ 3: Sample Garment")
     if not df_components.empty:
@@ -199,6 +215,10 @@ with tab3:
                     st.dataframe(df_f[["material_name", "doc_type", "certificate_num", "expiry_date", "mockup_status", "mockup_approved", "production_order", "related_articles", "seam_ready_qty", "seam_sent_oeti_qtd", "comments"]], use_container_width=True)
                 else: st.info(f"No active validation logs found for {name_cat}.")
     else: st.info("No items mapped to database records yet.")
+
+# ==========================================
+# 📑 BOX 4: DOCUMENTATION
+# ==========================================
 with tab4:
     st.header("4️⃣ 4: Sample Mock-up")
     if not df_checklist.empty:
@@ -236,6 +256,10 @@ with tab4:
                             st.rerun()
         conn.close()
     else: st.info("No active milestones mapped to this project registry.")
+
+# ==========================================
+# 📑 BOX 5: DOCUMENTATION
+# ==========================================
 with tab5:
     st.header("5️⃣ 5: Project Finalisation ")
     if not df_checklist.empty:
