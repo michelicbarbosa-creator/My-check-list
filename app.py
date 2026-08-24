@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -10,7 +9,7 @@ st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification Syst
 # 1. DATABASE MANAGEMENT (PERMANENT SQLITE)
 # ==========================================
 def connect_db():
-    return sqlite3.connect("oeko_tex_unified_v12.db")
+    return sqlite3.connect("oeko_tex_unified_v13.db")
 
 def initialize_db():
     conn = connect_db()
@@ -117,8 +116,12 @@ with col_p2:
                         st.error("Project name already exists.")
 
 if not df_projects.empty and selected_project != "No projects found":
-    proj_row = df_projects[df_projects["project_name"] == selected_project].iloc[0]
-    active_project_id = int(proj_row["id"])
+    df_filtered_proj = df_projects[df_projects["project_name"] == selected_project]
+    if not df_filtered_proj.empty:
+        proj_row = df_filtered_proj.iloc[0]
+        active_project_id = int(proj_row["id"])
+    else:
+        active_project_id = 0
 else:
     active_project_id = 0
 
@@ -144,13 +147,13 @@ detailed_categories = ["Fabric", "Zipper", "Lining", "Elastic", "Button", "Threa
 today = date.today()
 
 # ==========================================
-# 3. UNIFIED BOX STRUCTURE USING TABS
+# 3. CORRIGIDO: ABAS INDEPENDENTES CORRETAS
 # ==========================================
 st.markdown("---")
-box_tabs = st.tabs(["📦 BOX 1: Expiry Alarms", "📑 BOX 2: Documentation & Tech", "🛠️ BOX 3: Manufacturing Logs", "👕 BOX 4: Samples & Mock-ups", "🏁 BOX 5: Finalisation"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📦 BOX 1: Expiry Alarms", "📑 BOX 2: Documentation & Tech", "🛠️ BOX 3: Manufacturing Logs", "👕 BOX 4: Samples & Mock-ups", "🏁 BOX 5: Finalisation"])
 
 # --- BOX 1: CERTIFICATE EXPIRY ALARMS ---
-with box_tabs[0]:
+with tab1:
     st.header("1️⃣ Certificate Expiry Alarms")
     alarms_triggered = []
     if not df_components.empty:
@@ -181,5 +184,3 @@ with box_tabs[0]:
                 if st.form_submit_button("Save Document"):
                     if c_name and active_project_id > 0:
                         conn = connect_db()
-                        conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
-                        conn.commit()
