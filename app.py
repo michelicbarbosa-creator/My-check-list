@@ -177,6 +177,92 @@ with tab1:
 # ==========================================
 with tab2:
     st.header("2️⃣  2: Technical Documentation")
+    
+    if not df_checklist.empty:
+        conn = connect_db()
+        cursor = conn.cursor()
+        
+        # Filtrar apenas as tarefas que pertencem à Box 2
+        f_box2 = df_checklist[df_checklist["box_num"] == "2"]
+        
+        # Forçar a existência das 5 opções exatas pedidas caso seja um projeto novo
+        opcoes_exatas = [
+            "Technical documentation SPLAG",
+            "Technical documentation confirmed",
+            "Measurement chart",
+            "Measurement check of sample",
+            "Care label"
+        ]
+        
+        st.markdown("#### Document Status & Color Tracking")
+        
+        for tarefa_nome in opcoes_exatas:
+            # Encontrar o registro correspondente no banco de dados
+            registro = f_box2[f_box2["task"] == tarefa_nome]
+            
+            if not registro.empty:
+                r = registro.iloc[0]
+                id_tarefa = r["id"]
+                status_atual = r["status"]
+            else:
+                # Caso a tarefa não exista no banco ainda, cria um padrão temporário
+                status_atual = "Pending"
+                id_tarefa = None
+            
+            # Mapeamento do índice para o componente selectbox do Streamlit
+            lista_status = ["Pending", "In Progress", "Completed"]
+            index_atual = lista_status.index(status_atual) if status_atual in lista_status else 0
+            
+            # Definir a cor correspondente baseada na escolha solicitada
+            if status_atual == "Completed":
+                cor_fundo = "#d4edda"  # Verde (Sim / Concluído)
+                texto_cor = "#155724"
+                label_status = "🟢 YES (Completed)"
+            elif status_atual == "In Progress":
+                cor_fundo = "#fff3cd"  # Amarelo (Já visto / Em progresso)
+                texto_cor = "#856404"
+                label_status = "🟡 ALREADY SEEN (In Progress)"
+            else:
+                cor_fundo = "#f8d7da"  # Vermelho (Em falta / Pendente)
+                texto_cor = "#721c24"
+                label_status = "🔴 MISSING (Pending)"
+                
+            # Renderizar o bloco visual colorido na tela do telemóvel
+            st.markdown(
+                f"""
+                <div style="background-color: {cor_fundo}; padding: 12px; border-radius: 8px; 
+                            margin-bottom: 5px; border-left: 6px solid {texto_cor};">
+                    <strong style="color: {texto_cor}; font-size: 16px;">{tarefa_nome}</strong>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
+            
+            # Seletor de opções para mudar o status diretamente na tela
+            novo_status = st.selectbox(
+                f"Change status for {tarefa_nome}:",
+                lista_status,
+                index=index_atual,
+                key=f"status_box2_{id_tarefa if id_tarefa else tarefa_nome}",
+                label_visibility="collapsed"
+            )
+            
+            # Se o utilizador alterar a opção, grava imediatamente no banco de dados
+            if novo_status != status_atual:
+                if id_tarefa:
+                    conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (novo_status, id_tarefa))
+                else:
+                    conn.execute(
+                        "INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, '2', 'Technical Documentation', ?, ?, '')",
+                        (active_project_id, tarefa_nome, novo_status)
+                    )
+                conn.commit()
+                st.rerun()
+                
+        conn.close()
+    else:
+        st.info("No checklist benchmarks found for this project code.")
+
     if not df_checklist.empty:
         conn = connect_db()
         f_box2 = df_checklist[df_checklist["box_num"] == "2"]
