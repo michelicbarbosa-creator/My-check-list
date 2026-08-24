@@ -5,33 +5,24 @@ from datetime import date, datetime
 
 st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification System 2026")
 
-# ==========================================
-# 1. DATABASE MANAGEMENT (PERMANENT SQLITE)
-# ==========================================
 def connect_db():
-    return sqlite3.connect("oeko_tex_perfect_v16.db")
+    return sqlite3.connect("oeko_tex_isolated_tabs_v16.db")
 
 def initialize_db():
     conn = connect_db()
     cursor = conn.cursor()
-    
-    # Project Header Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT UNIQUE,
             article_number TEXT, model_no TEXT, bom_status TEXT
         )
     """)
-    
-    # Checklist Table for Boxes 2, 4 & 5
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS project_checklist (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
             box_num TEXT, phase TEXT, task TEXT, status TEXT, last_update TEXT
         )
     """)
-    
-    # Component Matrix Table for Box 1 & Box 3
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS production_components (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
@@ -40,16 +31,11 @@ def initialize_db():
             seam_ready_qty INTEGER, seam_sent_oeti_qtd INTEGER, comments TEXT
         )
     """)
-    
-    # Seed Baseline Template if completely empty
     cursor.execute("SELECT COUNT(*) FROM projects")
     if cursor.fetchone() == 0:
-        cursor.execute("""
-            INSERT INTO projects (project_name, article_number, model_no, bom_status) 
-            VALUES (?, ?, ?, ?)
-        """, ("35. ta-d winter + rain parkas", "409 130 - 409 110", "4100-M-ZR-ZH-U", "BOM-L + BOM-C"))
+        cursor.execute("INSERT INTO projects (project_name, article_number, model_no, bom_status) VALUES (?, ?, ?, ?)", 
+                       ("35. ta-d winter + rain parkas", "409 130 - 409 110", "4100-M-ZR-ZH-U", "BOM-L + BOM-C"))
         default_id = cursor.lastrowid
-        
         tasks = [
             ("2", "Documentation & Application", "New Certification", "Pending", ""),
             ("2", "Documentation & Application", "Application for extension", "Pending", ""),
@@ -78,17 +64,10 @@ def initialize_db():
         for box, phase, task, status, dt in tasks:
             cursor.execute("INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, ?, ?, ?, ?, ?)", 
                            (default_id, box, phase, task, status, dt))
-            
     conn.commit()
     conn.close()
 
 initialize_db()
-
-# ==========================================
-# 2. MAIN HEADER & PROJ MANAGER
-# ==========================================
-st.title("📋 Technical Product Certification System")
-
 conn = connect_db()
 df_projects = pd.read_sql_query("SELECT * FROM projects", conn)
 
@@ -124,7 +103,7 @@ if not df_projects.empty and selected_project != "No projects found":
 else: active_project_id = 0
 
 if active_project_id > 0:
-    with st.expander("📝 Edit Project Header Fields (Articles, Model, BOM)", expanded=False):
+    with st.expander("📝 Edit Project Header Fields", expanded=False):
         with st.form("edit_project_header"):
             col_h1, col_h2, col_h3 = st.columns(3)
             h_article = col_h1.text_input("Article Number", value=proj_row["article_number"])
@@ -144,19 +123,11 @@ conn.close()
 detailed_categories = ["Fabric", "Zipper", "Lining", "Elastic", "Button", "Thread", "Reflex", "Velcro"]
 today = date.today()
 
-# ==========================================
-# 3. SEPARATED BOX CODE IMPLEMENTATION
-# ==========================================
 st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📦 BOX 1: Expiry & Add", 
-    "📑 BOX 2: Documentation", 
-    "🛠️ BOX 3: Database Logs", 
-    "👕 BOX 4: Samples & Mock-ups", 
-    "🏁 BOX 5: Finalisation"
+    "📦 BOX 1: Expiry & Add", "📑 BOX 2: Documentation", "🛠️ BOX 3: Database Logs", "👕 BOX 4: Samples & Mock-ups", "🏁 BOX 5: Finalisation"
 ])
 
-# --- 1️⃣ INDEPENDENT BOX 1 CODE ---
 with tab1:
     st.header("1️⃣ BOX 1: Certificate Expiry Control")
     alarms_triggered = []
@@ -176,7 +147,7 @@ with tab1:
     else: st.success("✅ All certification timelines for this project are safe.")
 
     with st.form("box1_flat_form", clear_on_submit=True):
-        st.markdown("#### 📥 Add New Certification Record / Protocol Data")
+        st.markdown("#### 📥 Add New Certification Record")
         c1, c2, c3 = st.columns(3)
         with c1:
             c_cat = st.selectbox("Component Option", detailed_categories, key="b1_cat")
@@ -190,3 +161,90 @@ with tab1:
             if st.form_submit_button("Save Item Validity Data"):
                 if c_name and active_project_id > 0:
                     conn = connect_db()
+                    conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
+                    conn.commit()
+                    conn.close()
+         with tab2:
+    st.header("2️⃣ BOX 2: Project Documentation & Validation Checklist")
+    if not df_checklist.empty:
+        conn = connect_db()
+        f_box2 = df_checklist[df_checklist["box_num"] == "2"]
+        for idx, r in f_box2.iterrows():
+            if r["task"] == "Technical documentation SPLAG":
+                st.markdown(f"**{r['task']}**")
+                cur_dt = datetime.strptime(r["last_update"], "%Y-%m-%d").date() if r["last_update"] else today
+                new_dt = st.date_input("Last Technical Document Update", value=cur_dt, key=f"dt_box2_{r['id']}")
+                is_done = st.checkbox("Task Completed", value=(r["status"] == "Completed"), key=f"chk_s_{r['id']}")
+                st_val = "Completed" if is_done else "Pending"
+                if st_val != r["status"] or str(new_dt) != r["last_update"]:
+                    conn.execute("UPDATE project_checklist SET status=?, last_update=? WHERE id=?", (st_val, str(new_dt), r["id"]))
+                    conn.commit()
+            else:
+                is_done = st.checkbox(f"✔️ {r['task']} ({r['phase']})", value=(r["status"] == "Completed"), key=f"chk_b2_{r['id']}")
+                st_val = "Completed" if is_done else "Pending"
+                if st_val != r["status"]:
+                    conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (st_val, r["id"]))
+                    conn.commit()
+        conn.close()
+    else: st.info("No checklist benchmarks found for this project code.")
+           st.rerun()
+with tab3:
+    st.header("3️⃣ BOX 3: Active Component Database Overview")
+    if not df_components.empty:
+        sub_tabs = st.tabs(detailed_categories)
+        for idx, name_cat in enumerate(detailed_categories):
+            with sub_tabs[idx]:
+                df_f = df_components[df_components["category"] == name_cat]
+                if not df_f.empty:
+                    st.dataframe(df_f[["material_name", "doc_type", "certificate_num", "expiry_date", "mockup_status", "mockup_approved", "production_order", "related_articles", "seam_ready_qty", "seam_sent_oeti_qtd", "comments"]], use_container_width=True)
+                else: st.info(f"No active validation logs found for {name_cat}.")
+    else: st.info("No items mapped to database records yet.")
+with tab4:
+    st.header("4️⃣ BOX 4: Sample Garment Lifecycle & Mock-up Status")
+    if not df_checklist.empty:
+        conn = connect_db()
+        f_box4 = df_checklist[df_checklist["box_num"] == "4"]
+        col_b4_1, col_b4_2 = st.columns(2)
+        with col_b4_1:
+            st.markdown("#### Milestone Verification Checks")
+            for idx, r in f_box4.iterrows():
+                val = st.selectbox(f"{r['task']} ({r['phase']})", ["Pending", "In Progress", "Completed"], index=["Pending", "In Progress", "Completed"].index(r["status"]), key=f"sb4_{r['id']}")
+                if val != r["status"]:
+                    conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (val, r["id"]))
+                    conn.commit()
+        with col_b4_2:
+            st.markdown("#### Update Industrial Routing / Volumes")
+            if not df_components.empty:
+                t_mat = st.selectbox("Choose Target Material to Modify", df_components["material_name"].tolist(), key="sb4_mat")
+                df_target_comp = df_components[df_components["material_name"] == t_mat]
+                if not df_target_comp.empty:
+                    m_row = df_target_comp.iloc[0]
+                    with st.form("box4_manufacturing_form"):
+                        m_st = st.selectbox("Mock-up Status", ["Mock-ups needed", "Seam samples in progress", "Ready"], index=["Mock-ups needed", "Seam samples in progress", "Ready"].index(m_row["mockup_status"]))
+                        m_ap = st.selectbox("Mock-up Evaluation", ["Pending", "Approved", "Rejected"], index=["Pending", "Approved", "Rejected"].index(m_row["mockup_approved"]))
+                        m_po = st.text_input("Production Order (PO Number)", value=m_row["production_order"])
+                        m_art = st.text_area("Linked Production Articles", value=m_row["related_articles"])
+                        m_rdy = st.number_input("Seam Samples Ready (Qty Made)", min_value=0, value=int(m_row["seam_ready_qty"]))
+                        m_snt = st.number_input("Seam Samples Sent to OETI (Qty Sent)", min_value=0, value=int(m_row["seam_sent_oeti_qtd"]))
+                        m_cm = st.text_input("Line Comments", value=m_row["comments"])
+                        if st.form_submit_button("Save Component Changes"):
+                            conn_inner = connect_db()
+                            conn_inner.execute("UPDATE production_components SET mockup_status=?, mockup_approved=?, production_order=?, related_articles=?, seam_ready_qty=?, seam_sent_oeti_qtd=?, comments=? WHERE material_name=? AND project_id=?", (m_st, m_ap, m_po, m_art, int(m_rdy), int(m_snt), m_cm, t_mat, active_project_id))
+                            conn_inner.commit()
+                            conn_inner.close()
+                            st.success("Component matrix successfully updated.")
+                            st.rerun()
+        conn.close()
+    else: st.info("No active milestones mapped to this project registry.")
+with tab5:
+    st.header("5️⃣ BOX 5: Project Finalisation Tasks")
+    if not df_checklist.empty:
+        conn = connect_db()
+        f_box5 = df_checklist[df_checklist["box_num"] == "5"]
+        for idx, r in f_box5.iterrows():
+            val = st.selectbox(f"🏁 {r['task']}", ["Pending", "In Progress", "Completed"], index=["Pending", "In Progress", "Completed"].index(r["status"]), key=f"sb5_{r['id']}")
+            if val != r["status"]:
+                conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (val, r["id"]))
+                conn.commit()
+        conn.close()
+    else: st.info("Closure parameters currently unassigned.")
