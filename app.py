@@ -132,10 +132,10 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 # ==========================================
-# 1️⃣ BOX 1: EXPIRY & ADD
+# 1️⃣ 1: ADD
 # ==========================================
 with tab1:
-    st.header("1️⃣ BOX 1: Certificate Expiry Control")
+    st.header("1️⃣ BOX 1: documentation")
     alarms_triggered = []
     if not df_components.empty:
         for idx, r in df_components.iterrows():
@@ -173,7 +173,7 @@ with tab1:
                     st.rerun()
 
 # ==========================================
-# 📑 BOX 2: DOCUMENTATION
+# 📑  2: DOCUMENTATION
 # ==========================================
 with tab2:
     st.header("2️⃣ BOX 2: Project Documentation & Validation Checklist")
@@ -201,7 +201,7 @@ with tab2:
         st.info("No checklist benchmarks found for this project code.")
 
 # ==========================================
-# 📑 BOX 3: DOCUMENTATION
+# 📑 3: Sample Garment
 # ==========================================
 with tab3:
     st.header("3️⃣ BOX 3: Active Component Database Overview")
@@ -218,7 +218,7 @@ with tab3:
         st.info("No items mapped to database records yet.")
 
 # ==========================================
-# 📑 BOX 4: DOCUMENTATION
+# 📑 4: Sample Mockup
 # ==========================================
 with tab4:
     st.header("4️⃣ 4: Sample Mock-up")
@@ -260,10 +260,10 @@ with tab4:
         st.info("No active milestones mapped to this project registry.")
 
 # ==========================================
-# 📑 BOX 5: DOCUMENTATION
+# 📑 5: Finalisation
 # ==========================================
 with tab5:
-    st.header("5️⃣ BOX 5: Project Finalisation Tasks")
+    st.header("5️⃣  5: Project Finalisation Tasks")
     if not df_checklist.empty:
         conn = connect_db()
         f_box5 = df_checklist[df_checklist["box_num"] == "5"]
