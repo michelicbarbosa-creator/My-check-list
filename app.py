@@ -1,4 +1,4 @@
-import streamlit as st
+       import streamlit as st
 import pandas as pd
 import sqlite3
 from datetime import date, datetime
@@ -9,7 +9,7 @@ st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification Syst
 # 1. DATABASE MANAGEMENT (PERMANENT SQLITE)
 # ==========================================
 def connect_db():
-    return sqlite3.connect("oeko_tex_flat_v14.db")
+    return sqlite3.connect("oeko_tex_isolated_tabs_v15.db")
 
 def initialize_db():
     conn = connect_db()
@@ -23,7 +23,7 @@ def initialize_db():
         )
     """)
     
-    # Checklist for Boxes 2, 4 & 5
+    # Process Checklist (Boxes 2, 4 & 5)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS project_checklist (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
@@ -31,7 +31,7 @@ def initialize_db():
         )
     """)
     
-    # Component Matrix for Box 1 & Box 3
+    # Material Matrix (Boxes 1 & 3)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS production_components (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
@@ -41,7 +41,7 @@ def initialize_db():
         )
     """)
     
-    # Seed Baseline Template
+    # Seed Baseline Template if empty
     cursor.execute("SELECT COUNT(*) FROM projects")
     if cursor.fetchone() == 0:
         cursor.execute("""
@@ -85,7 +85,7 @@ def initialize_db():
 initialize_db()
 
 # ==========================================
-# 2. HEADER INTERFACE
+# 2. MAIN HEADER & MULTI-PROJECT
 # ==========================================
 st.title("📋 Technical Product Certification System")
 
@@ -145,47 +145,51 @@ detailed_categories = ["Fabric", "Zipper", "Lining", "Elastic", "Button", "Threa
 today = date.today()
 
 # ==========================================
-# 3. DIRECT FLAT LAYOUT (NO EXTRA TABS)
+# 3. INDEPENDENT TABS LAYOUT (FIXED FOR MOBILE)
 # ==========================================
-
-# ------------------------------------------
-# 1️⃣ BOX 1: DOCUMENTATION & CERTIFICATES ENTRY
-# ------------------------------------------
 st.markdown("---")
-st.header("1️⃣ BOX 1: Documentation & Component Validation")
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📦 BOX 1: Expiry & Add", 
+    "📑 BOX 2: Documentation", 
+    "🛠️ BOX 3: Database Logs", 
+    "👕 BOX 4: Samples & Mock-ups", 
+    "🏁 BOX 5: Finalisation"
+])
 
-# Expiry Alerts
-alarms_triggered = []
-if not df_components.empty:
-    for idx, r in df_components.iterrows():
-        try:
-            exp_date = datetime.strptime(r["expiry_date"], "%Y-%m-%d").date()
-            dias_restantes = (exp_date - today).days
-            if r["doc_type"] == "OEKO-Tex Standard 100" and dias_restantes <= 1:
-                alarms_triggered.append(f"⚠️ **OEKO-TEX ALERT:** {r['material_name']} ({r['category']}) expires tomorrow or is already invalid!")
-            elif r["doc_type"] != "OEKO-Tex Standard 100" and dias_restantes <= 21:
-                alarms_triggered.append(f"⚠️ **TEST REPORT ALERT (3 WEEKS):** {r['material_name']} ({r['doc_type']}) expires in {dias_restantes} days.")
-        except: pass
+# ------------------------------------------
+# --- TAB 1: BOX 1 RULES & ACTIONS ---
+# ------------------------------------------
+with tab1:
+    st.header("1️⃣ BOX 1: Certificate Expiry Control")
+    alarms_triggered = []
+    if not df_components.empty:
+        for idx, r in df_components.iterrows():
+            try:
+                exp_date = datetime.strptime(r["expiry_date"], "%Y-%m-%d").date()
+                dias_restantes = (exp_date - today).days
+                if r["doc_type"] == "OEKO-Tex Standard 100" and dias_restantes <= 1:
+                    alarms_triggered.append(f"⚠️ **OEKO-TEX ALERT:** {r['material_name']} ({r['category']}) expires tomorrow or is invalid!")
+                elif r["doc_type"] != "OEKO-Tex Standard 100" and dias_restantes <= 21:
+                    alarms_triggered.append(f"⚠️ **TEST REPORT ALERT (3 WEEKS):** {r['material_name']} ({r['doc_type']}) expires in {dias_restantes} days.")
+            except: pass
 
-if alarms_triggered:
-    for alarm in alarms_triggered: st.warning(alarm)
-else:
-    st.success("✅ All certification timelines and test reports for this project are currently stable.")
+    if alarms_triggered:
+        for alarm in alarms_triggered: st.warning(alarm)
+    else: st.success("✅ All certification timelines for this project are safe.")
 
-# Unified Input Form for Box 1
-with st.form("box1_flat_form", clear_on_submit=True):
-    st.markdown("#### 📥 Add New Certification Record / Protocol Data")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        c_cat = st.selectbox("Component Option", detailed_categories)
-        c_name = st.text_input("Item Specification / Name (e.g., Nylon Lining)")
-    with c2:
-        c_type = st.selectbox("Protocol/Doc Type", ["New Certification", "Application for extension", "Re-certification", "OEKO-Tex Standard 100", "Test Report Fabric", "Test Report Accessories"])
-        c_num = st.text_input("Certificate / Report Unique ID")
-    with c3:
-        c_exp = st.date_input("Document Expiry Date", today)
-        st.markdown("<br>", unsafe_allow_html=True)
-        submit_b1 = st.form_submit_button("Save Item Validity Data")
-        
-    if submit_b1 and c_name and active_project_id > 0:
-        conn = connect_db()
+    with st.form("box1_flat_form", clear_on_submit=True):
+        st.markdown("#### 📥 Add New Certification Record / Protocol Data")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            c_cat = st.selectbox("Component Option", detailed_categories, key="b1_cat")
+            c_name = st.text_input("Item Specification / Name", key="b1_name")
+        with c2:
+            c_type = st.selectbox("Protocol/Doc Type", ["New Certification", "Application for extension", "Re-certification", "OEKO-Tex Standard 100", "Test Report Fabric", "Test Report Accessories"], key="b1_type")
+            c_num = st.text_input("Certificate / Report Unique ID", key="b1_num")
+        with c3:
+            c_exp = st.date_input("Document Expiry Date", today, key="b1_date")
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.form_submit_button("Save Item Validity Data"):
+                if c_name and active_project_id > 0:
+                    conn = connect_db()
+ 
