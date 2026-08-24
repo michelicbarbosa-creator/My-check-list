@@ -197,7 +197,7 @@ with tab2:
                     conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (st_val, r["id"]))
                     conn.commit()
         conn.close()
-           else:
+                else:
                st.info("No checklist benchmarks found for this project code.")
            st.rerun()
 
@@ -255,7 +255,7 @@ with tab4:
                             st.success("Component matrix successfully updated.")
                             st.rerun()
         conn.close()
-    else: st.info("No active milestones mapped to this project registry.")
+                        else: st.info("No active milestones mapped to this project registry.")
 
 # ==========================================
 # 📑 BOX 5: DOCUMENTATION
