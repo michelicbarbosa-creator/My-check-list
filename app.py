@@ -176,115 +176,93 @@ with tab1:
 # 📑  2: DOCUMENTATION
 # ==========================================
 with tab2:
-    st.header("2️⃣  2: Technical Documentation")
+    st.header("2️⃣ : Technical Documentation")
     
-    if not df_checklist.empty:
+    # --- TAB 2: BOX 2 SYSTEM COLOR MATRIX (WITH AUTO-SEED SECURITY) ---
+    
+    # 1. Definição das 5 tarefas obrigatórias pedidas
+    opcoes_exatas = [
+        "Technical documentation SPLAG",
+        "Technical documentation confirmed",
+        "Measurement chart",
+        "Measurement check of sample",
+        "Care label"
+    ]
+    
+    # 2. Injeção Automática de Segurança (Garante que nunca fica vazio)
+    if active_project_id > 0:
         conn = connect_db()
         cursor = conn.cursor()
-        
-        # Filtrar apenas as tarefas que pertencem à Box 2
-        f_box2 = df_checklist[df_checklist["box_num"] == "2"]
-        
-        # Forçar a existência das 5 opções exatas pedidas caso seja um projeto novo
-        opcoes_exatas = [
-            "Technical documentation SPLAG",
-            "Technical documentation confirmed",
-            "Measurement chart",
-            "Measurement check of sample",
-            "Care label"
-        ]
-        
-        st.markdown("#### Document Status & Color Tracking")
-        
         for tarefa_nome in opcoes_exatas:
-            # Encontrar o registro correspondente no banco de dados
-            registro = f_box2[f_box2["task"] == tarefa_nome]
-            
-            if not registro.empty:
-                r = registro.iloc[0]
-                id_tarefa = r["id"]
-                status_atual = r["status"]
-            else:
-                # Caso a tarefa não exista no banco ainda, cria um padrão temporário
-                status_atual = "Pending"
-                id_tarefa = None
-            
-            # Mapeamento do índice para o componente selectbox do Streamlit
-            lista_status = ["Pending", "In Progress", "Completed"]
-            index_atual = lista_status.index(status_atual) if status_atual in lista_status else 0
-            
-            # Definir a cor correspondente baseada na escolha solicitada
-            if status_atual == "Completed":
-                cor_fundo = "#d4edda"  # Verde (Sim / Concluído)
-                texto_cor = "#155724"
-                label_status = "🟢 YES (Completed)"
-            elif status_atual == "In Progress":
-                cor_fundo = "#fff3cd"  # Amarelo (Já visto / Em progresso)
-                texto_cor = "#856404"
-                label_status = "🟡 ALREADY SEEN (In Progress)"
-            else:
-                cor_fundo = "#f8d7da"  # Vermelho (Em falta / Pendente)
-                texto_cor = "#721c24"
-                label_status = "🔴 MISSING (Pending)"
-                
-            # Renderizar o bloco visual colorido na tela do telemóvel
-            st.markdown(
-                f"""
-                <div style="background-color: {cor_fundo}; padding: 12px; border-radius: 8px; 
-                            margin-bottom: 5px; border-left: 6px solid {texto_cor};">
-                    <strong style="color: {texto_cor}; font-size: 16px;">{tarefa_nome}</strong>
-                </div>
-                """, 
-                unsafe_allow_html=True
+            cursor.execute(
+                "SELECT COUNT(*) FROM project_checklist WHERE project_id = ? AND task = ? AND box_num = '2'", 
+                (active_project_id, tarefa_nome)
             )
-            
-            # Seletor de opções para mudar o status diretamente na tela
-            novo_status = st.selectbox(
-                f"Change status for {tarefa_nome}:",
-                lista_status,
-                index=index_atual,
-                key=f"status_box2_{id_tarefa if id_tarefa else tarefa_nome}",
-                label_visibility="collapsed"
-            )
-            
-            # Se o utilizador alterar a opção, grava imediatamente no banco de dados
-            if novo_status != status_atual:
-                if id_tarefa:
-                    conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (novo_status, id_tarefa))
-                else:
-                    conn.execute(
-                        "INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, '2', 'Technical Documentation', ?, ?, '')",
-                        (active_project_id, tarefa_nome, novo_status)
-                    )
-                conn.commit()
-                st.rerun()
-                
+            if cursor.fetchone()[0] == 0:
+                cursor.execute(
+                    "INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, '2', 'Technical Documentation', ?, 'Pending', '')", 
+                    (active_project_id, tarefa_nome)
+                )
+        conn.commit()
         conn.close()
-    else:
-        st.info("No checklist benchmarks found for this project code.")
 
-    if not df_checklist.empty:
-        conn = connect_db()
-        f_box2 = df_checklist[df_checklist["box_num"] == "2"]
-        for idx, r in f_box2.iterrows():
-            if r["task"] == "Technical documentation SPLAG":
-                st.markdown(f"**{r['task']}**")
-                cur_dt = datetime.strptime(r["last_update"], "%Y-%m-%d").date() if r["last_update"] else today
-                new_dt = st.date_input("Last Technical Document Update", value=cur_dt, key=f"dt_box2_{r['id']}")
-                is_done = st.checkbox("Task Completed", value=(r["status"] == "Completed"), key=f"chk_s_{r['id']}")
-                st_val = "Completed" if is_done else "Pending"
-                if st_val != r["status"] or str(new_dt) != r["last_update"]:
-                    conn.execute("UPDATE project_checklist SET status=?, last_update=? WHERE id=?", (st_val, str(new_dt), r["id"]))
-                    conn.commit()
-            else:
-                is_done = st.checkbox(f"✔️ {r['task']} ({r['phase']})", value=(r["status"] == "Completed"), key=f"chk_b2_{r['id']}")
-                st_val = "Completed" if is_done else "Pending"
-                if st_val != r["status"]:
-                    conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (st_val, r["id"]))
-                    conn.commit()
-        conn.close()
-    else:
-        st.info("No checklist benchmarks found for this project code.")
+    # 3. Leitura e Renderização dos Cartões Coloridos no Telemóvel
+    conn = connect_db()
+    # Recarregar a lista atualizada diretamente do banco de dados
+    df_checklist_atualizada = pd.read_sql_query(f"SELECT * FROM project_checklist WHERE project_id = {active_project_id} AND box_num = '2'", conn)
+    
+    st.markdown("#### Document Status & Color Tracking")
+    
+    for tarefa_nome in opcoes_exatas:
+        registro = df_checklist_atualizada[df_checklist_atualizada["task"] == tarefa_nome]
+        
+        if not registro.empty:
+            status_atual = registro.iloc[0]["status"]
+            id_tarefa = int(registro.iloc[0]["id"])
+        else:
+            status_atual = "Pending"
+            id_tarefa = None
+            
+        # Lógica de Matriz de Cores Dinâmicas
+        if status_atual == "Completed":
+            cor_fundo = "#d4edda"  # Verde (Sim)
+            texto_cor = "#155724"
+        elif status_atual == "In Progress":
+            cor_fundo = "#fff3cd"  # Amarelo (Já visto)
+            texto_cor = "#856404"
+        else:
+            cor_fundo = "#f8d7da"  # Vermelho (Em falta)
+            texto_cor = "#721c24"
+            
+        st.markdown(
+            f"""
+            <div style="background-color: {cor_fundo}; padding: 12px; border-radius: 8px; 
+                        margin-bottom: 5px; border-left: 6px solid {texto_cor};">
+                <strong style="color: {texto_cor}; font-size: 16px;">{tarefa_nome} — Status: {status_atual}</strong>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        
+        lista_status = ["Pending", "In Progress", "Completed"]
+        index_atual = lista_status.index(status_atual) if status_atual in lista_status else 0
+        
+        novo_status = st.selectbox(
+            f"Update Status for {tarefa_nome}",
+            lista_status,
+            index=index_atual,
+            key=f"status_box2_{id_tarefa if id_tarefa else tarefa_nome}",
+            label_visibility="collapsed"
+        )
+        
+        if novo_status != status_atual and id_tarefa:
+            conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (novo_status, id_tarefa))
+            conn.commit()
+            conn.close()
+            st.rerun()
+            
+    conn.close()
+
 
 # ==========================================
 # 📑 3: Sample Garment
