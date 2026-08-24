@@ -9,13 +9,13 @@ st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification Syst
 # 1. DATABASE MANAGEMENT (PERMANENT SQLITE)
 # ==========================================
 def connect_db():
-    return sqlite3.connect("oeko_tex_isolated_tabs_v15.db")
+    return sqlite3.connect("oeko_tex_perfect_v16.db")
 
 def initialize_db():
     conn = connect_db()
     cursor = conn.cursor()
     
-    # Project Header
+    # Project Header Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT UNIQUE,
@@ -23,7 +23,7 @@ def initialize_db():
         )
     """)
     
-    # Process Checklist (Boxes 2, 4 & 5)
+    # Checklist Table for Boxes 2, 4 & 5
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS project_checklist (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
@@ -31,7 +31,7 @@ def initialize_db():
         )
     """)
     
-    # Material Matrix (Boxes 1 & 3)
+    # Component Matrix Table for Box 1 & Box 3
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS production_components (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
@@ -41,7 +41,7 @@ def initialize_db():
         )
     """)
     
-    # Seed Baseline Template if empty
+    # Seed Baseline Template if completely empty
     cursor.execute("SELECT COUNT(*) FROM projects")
     if cursor.fetchone() == 0:
         cursor.execute("""
@@ -85,7 +85,7 @@ def initialize_db():
 initialize_db()
 
 # ==========================================
-# 2. MAIN HEADER & MULTI-PROJECT
+# 2. MAIN HEADER & PROJ MANAGER
 # ==========================================
 st.title("📋 Technical Product Certification System")
 
@@ -145,7 +145,7 @@ detailed_categories = ["Fabric", "Zipper", "Lining", "Elastic", "Button", "Threa
 today = date.today()
 
 # ==========================================
-# 3. INDEPENDENT TABS LAYOUT (FIXED FOR MOBILE)
+# 3. SEPARATED BOX CODE IMPLEMENTATION
 # ==========================================
 st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -156,9 +156,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🏁 BOX 5: Finalisation"
 ])
 
-# ------------------------------------------
-# --- TAB 1: BOX 1 RULES & ACTIONS ---
-# ------------------------------------------
+# --- 1️⃣ INDEPENDENT BOX 1 CODE ---
 with tab1:
     st.header("1️⃣ BOX 1: Certificate Expiry Control")
     alarms_triggered = []
@@ -192,4 +190,3 @@ with tab1:
             if st.form_submit_button("Save Item Validity Data"):
                 if c_name and active_project_id > 0:
                     conn = connect_db()
- 
