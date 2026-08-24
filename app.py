@@ -164,8 +164,8 @@ with tab1:
                     conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
                     conn.commit()
                     conn.close()
-     with tab2:
-    st.header("2️⃣ BOX 2: Project Documentation & Validation Checklist")
+     with tab 2:
+    st.header("2️⃣ 2: Technical Documentation ")
     if not df_checklist.empty:
         conn = connect_db()
         f_box2 = df_checklist[df_checklist["box_num"] == "2"]
@@ -189,7 +189,7 @@ with tab1:
     else: st.info("No checklist benchmarks found for this project code.")
            st.rerun()
 with tab3:
-    st.header("3️⃣ BOX 3: Active Component Database Overview")
+    st.header("3️⃣ 3: Sample Garment")
     if not df_components.empty:
         sub_tabs = st.tabs(detailed_categories)
         for idx, name_cat in enumerate(detailed_categories):
@@ -200,7 +200,7 @@ with tab3:
                 else: st.info(f"No active validation logs found for {name_cat}.")
     else: st.info("No items mapped to database records yet.")
 with tab4:
-    st.header("4️⃣ BOX 4: Sample Garment Lifecycle & Mock-up Status")
+    st.header("4️⃣ 4: Sample Mock-up")
     if not df_checklist.empty:
         conn = connect_db()
         f_box4 = df_checklist[df_checklist["box_num"] == "4"]
@@ -237,7 +237,7 @@ with tab4:
         conn.close()
     else: st.info("No active milestones mapped to this project registry.")
 with tab5:
-    st.header("5️⃣ BOX 5: Project Finalisation Tasks")
+    st.header("5️⃣ 5: Project Finalisation ")
     if not df_checklist.empty:
         conn = connect_db()
         f_box5 = df_checklist[df_checklist["box_num"] == "5"]
