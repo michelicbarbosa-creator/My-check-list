@@ -256,13 +256,14 @@ with tab4:
                             st.success("Component matrix successfully updated.")
                             st.rerun()
         conn.close()
-                        else: st.info("No active milestones mapped to this project registry.")
+    else:
+        st.info("No active milestones mapped to this project registry.")
 
 # ==========================================
 # 📑 BOX 5: DOCUMENTATION
 # ==========================================
 with tab5:
-    st.header("5️⃣ 5: Project Finalisation ")
+    st.header("5️⃣ BOX 5: Project Finalisation Tasks")
     if not df_checklist.empty:
         conn = connect_db()
         f_box5 = df_checklist[df_checklist["box_num"] == "5"]
@@ -272,4 +273,5 @@ with tab5:
                 conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (val, r["id"]))
                 conn.commit()
         conn.close()
-    else: st.info("Closure parameters currently unassigned.")
+    else:
+        st.info("Closure parameters currently unassigned.")
