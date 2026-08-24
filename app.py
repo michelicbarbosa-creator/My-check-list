@@ -128,14 +128,14 @@ today = date.today()
 
 st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📦 1: Documentation", "📑 2: Technical Documentation", "👕 BOX 3: sample garmwnt", "👕 BOX 4: Samples Mock-ups", "🏁 BOX 5: Finalisation"
+    "📦 1: Documentation", "📑 2: Technical Documentation", "👕  3: sample garmwnt", "👕  4: Samples Mock-ups", "🏁  5: Finalisation"
 ])
 
 # ==========================================
 # 1️⃣ 1: ADD
 # ==========================================
 with tab1:
-    st.header("1️⃣ BOX 1: documentation")
+    st.header("1️⃣  1: documentation")
     alarms_triggered = []
     if not df_components.empty:
         for idx, r in df_components.iterrows():
@@ -152,7 +152,7 @@ with tab1:
         for alarm in alarms_triggered: st.warning(alarm)
     else: st.success("✅ All certification timelines for this project are safe.")
 
-    with st.form("box1_flat_form", clear_on_submit=True):
+    with st.form("1_flat_form", clear_on_submit=True):
         st.markdown("#### 📥 Add New Certification Record")
         c1, c2, c3 = st.columns(3)
         with c1:
@@ -176,7 +176,7 @@ with tab1:
 # 📑  2: DOCUMENTATION
 # ==========================================
 with tab2:
-    st.header("2️⃣ BOX 2: Project Documentation & Validation Checklist")
+    st.header("2️⃣  2: Technical Documentation")
     if not df_checklist.empty:
         conn = connect_db()
         f_box2 = df_checklist[df_checklist["box_num"] == "2"]
@@ -204,7 +204,7 @@ with tab2:
 # 📑 3: Sample Garment
 # ==========================================
 with tab3:
-    st.header("3️⃣ BOX 3: Active Component Database Overview")
+    st.header("3️⃣  3: Sample Garment")
     if not df_components.empty:
         sub_tabs = st.tabs(detailed_categories)
         for idx, name_cat in enumerate(detailed_categories):
@@ -263,7 +263,7 @@ with tab4:
 # 📑 5: Finalisation
 # ==========================================
 with tab5:
-    st.header("5️⃣  5: Project Finalisation Tasks")
+    st.header("5️⃣  5: Project Finalisation ")
     if not df_checklist.empty:
         conn = connect_db()
         f_box5 = df_checklist[df_checklist["box_num"] == "5"]
