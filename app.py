@@ -23,7 +23,7 @@ def initialize_db():
         )
     """)
     
-    # Boxes 2, 4 & 5: Process Timelines
+    #  2, 4 & 5: Process Timelines
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS project_checklist (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
@@ -31,7 +31,7 @@ def initialize_db():
         )
     """)
     
-    # Boxes 1 & 3: Component Tracking & Manufacturing Records
+    # 1 & 3: Component Tracking & Manufacturing Records
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS production_components (
             id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
@@ -152,7 +152,7 @@ today = date.today()
 st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📦 BOX 1: Expiry Alarms", "📑 BOX 2: Documentation & Tech", "🛠️ BOX 3: Manufacturing Logs", "👕 BOX 4: Samples & Mock-ups", "🏁 BOX 5: Finalisation"])
 
-# --- BOX 1: CERTIFICATE EXPIRY ALARMS ---
+# --- 1: CERTIFICATE EXPIRY ALARMS ---
 with tab1:
     st.header("1️⃣ Certificate Expiry Alarms")
     alarms_triggered = []
