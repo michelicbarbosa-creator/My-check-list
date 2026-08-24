@@ -197,7 +197,8 @@ with tab2:
                     conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (st_val, r["id"]))
                     conn.commit()
         conn.close()
-           else: st.info("No checklist benchmarks found for this project code.")
+           else:
+               st.info("No checklist benchmarks found for this project code.")
            st.rerun()
 
 # ==========================================
@@ -213,7 +214,7 @@ with tab3:
                 if not df_f.empty:
                     st.dataframe(df_f[["material_name", "doc_type", "certificate_num", "expiry_date", "mockup_status", "mockup_approved", "production_order", "related_articles", "seam_ready_qty", "seam_sent_oeti_qtd", "comments"]], use_container_width=True)
                 else: st.info(f"No active validation logs found for {name_cat}.")
-    else: st.info("No items mapped to database records yet.")
+                else: st.info("No items mapped to database records yet.")
 
 # ==========================================
 # 📑 BOX 4: DOCUMENTATION
