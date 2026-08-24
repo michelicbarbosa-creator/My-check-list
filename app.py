@@ -176,8 +176,8 @@ with tab1:
 # 📑 BOX 2: DOCUMENTATION
 # ==========================================
 with tab2:
-  st.header("2️⃣ 2: Technical Documentation ")
-  if not df_checklist.empty:
+    st.header("2️⃣ BOX 2: Project Documentation & Validation Checklist")
+    if not df_checklist.empty:
         conn = connect_db()
         f_box2 = df_checklist[df_checklist["box_num"] == "2"]
         for idx, r in f_box2.iterrows():
@@ -197,9 +197,8 @@ with tab2:
                     conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (st_val, r["id"]))
                     conn.commit()
         conn.close()
-                else:
-               st.info("No checklist benchmarks found for this project code.")
-           st.rerun()
+    else:
+        st.info("No checklist benchmarks found for this project code.")
 
 # ==========================================
 # 📑 BOX 3: DOCUMENTATION
