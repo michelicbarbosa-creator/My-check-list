@@ -197,7 +197,7 @@ with tab2:
                     conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (st_val, r["id"]))
                     conn.commit()
         conn.close()
-    else: st.info("No checklist benchmarks found for this project code.")
+           else: st.info("No checklist benchmarks found for this project code.")
            st.rerun()
 
 # ==========================================
