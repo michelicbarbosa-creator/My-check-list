@@ -15,7 +15,7 @@ if 'oeti_shipments' not in st.session_state:
 status_options = [
     "🟥 NO NEED", 
     "🟨 IN PROGRESS / EM PROCESSO", 
-    "🟩 GREEN / OK / TERMINADO"
+    "🟩 OK / TERMINADO"
 ]
 
 def check_expiration(exp_date):
@@ -96,9 +96,9 @@ with tab3:
     saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0)
     label_status = st.selectbox("LABEL", status_options, index=0)
 
-# ================= TAB 4: SAMPLE GARMENT =================
+# ================= TAB 4: SAMPLE GARMENT (MÚLTIPLOS ENVIOS COM APROVAÇÃO) =================
 with tab4:
-    st.header("Sample Garment Tracking & Approval")
+    st.header("Sample Garment Tracking")
     s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0)
     s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=0)
     s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=0)
@@ -106,33 +106,42 @@ with tab4:
     s_excel = st.selectbox("SAMPLE ENTERED IN 'OVERVIEW OF REQUIRED SAMPLE (EXCEL FILE)'", status_options, index=0)
     
     st.markdown("---")
-    st.subheader("🏁 OETI Approval Status")
-    approval_status = st.radio("SAMPLE APPROVAL STATUS", ["PENDING / IN EVALUATION", "🟩 APPROVED", "🟥 NOT APPROVED"])
-    
-    rejection_reason = ""
-    if approval_status == "🟥 NOT APPROVED":
-        rejection_reason = st.text_area("REASON FOR REJECTION (Why wasn't it approved?)", value="")
-    
-    st.markdown("---")
     st.subheader("Production & OETI Shipment Log")
     col_made, col_log = st.columns(2)
+    
     with col_made:
         samples_made = st.number_input("QUANTITY OF SAMPLES MADE", min_value=0, value=1)
         date_made = st.date_input("DATE SAMPLES MADE")
+    
     with col_log:
-        st.write("Record a specific shipment to OETI:")
-        shipment_qty = st.number_input("QUANTITY OF SAMPLES SENT IN THIS BATCH", min_value=1, value=1, key="ship_qty")
+        st.write("Record a specific shipment batch to OETI with its status:")
+        shipment_qty = st.number_input("QUANTITY SENT IN THIS BATCH", min_value=1, value=1, key="ship_qty")
         shipment_date = st.date_input("DATE SENT TO OETI", key="ship_date")
         
+        # APROVAÇÃO JUNTO COM O LOTE DE ENVIO
+        ship_approval = st.selectbox("BATCH APPROVAL STATUS", ["PENDING / IN EVALUATION", "🟩 APPROVED", "🟥 NOT APPROVED"], key="ship_app")
+        
+        ship_rejection = ""
+        if ship_approval == "🟥 NOT APPROVED":
+            ship_rejection = st.text_input("Reason for Rejection:", value="", key="ship_rej")
+            
         if st.button("➕ Add Shipment to OETI List"):
-            st.session_state.oeti_shipments.append({"qty": shipment_qty, "date": str(shipment_date)})
-            st.success(f"Logged shipment of {shipment_qty} sample(s) on {shipment_date}!")
+            status_text = f"{ship_approval}"
+            if ship_approval == "🟥 NOT APPROVED" and ship_rejection:
+                status_text += f" (Reason: {ship_rejection})"
+                
+            st.session_state.oeti_shipments.append({
+                "qty": shipment_qty, 
+                "date": str(shipment_date),
+                "approval": status_text
+            })
+            st.success(f"Logged shipment batch on {shipment_date}!")
 
     st.markdown("---")
     st.subheader("🚚 History of Registered OETI Shipments")
     if st.session_state.oeti_shipments:
         for idx, s in enumerate(st.session_state.oeti_shipments):
-            st.text(f"📦 Shipment #{idx+1}: {s['qty']} sample(s) sent on {s['date']}")
+            st.text(f"📦 Shipment #{idx+1}: {s['qty']} sample(s) sent on {s['date']} | Status: {s['approval']}")
         if st.button("🗑️ Clear Shipment History"):
             st.session_state.oeti_shipments = []
             st.rerun()
@@ -196,12 +205,5 @@ with tab6:
     lines.append(f"SAMPLE SENT TO OETI:\t{s_sent_oeti}")
     lines.append(f"SAMPLE ENTERED IN EXCEL FILE:\t{s_excel}")
     lines.append(f"Total Samples Made:\t{samples_made} on {date_made}")
-    lines.append(f"OETI Approval Status:\t{approval_status}")
-    if approval_status == "🟥 NOT APPROVED":
-        lines.append(f"Reason for Rejection:\t{rejection_reason if rejection_reason else 'Not specified'}")
     
     lines.append("OETI Shipment History Log:\t")
-    
-    if st.session_state.oeti_shipments:
-        for idx, s in enumerate(st.session_state.oeti_shipments):
-            lines.append(f"-> Batch Shipment #{idx+1}:\t{s['qty']} sample(s) sent on {s['date']}")
