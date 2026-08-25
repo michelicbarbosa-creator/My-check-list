@@ -14,7 +14,7 @@ if 'saved_projects_history' not in st.session_state:
     st.session_state.saved_projects_history = []
 
 status_options = [
-    "🟥 NO NEED", 
+    "🟥 NO NEED/NOT OK", 
     "🟨 IN PROGRESS / EM PROCESSO", 
     "🟩 OK / TERMINADO"
 ]
