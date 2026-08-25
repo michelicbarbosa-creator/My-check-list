@@ -120,10 +120,10 @@ with tab4:
     
     with col_log:
         st.write("Record a specific shipment batch to OETI with its status:")
-        shipment_qty = st.number_input("QUANTITY SENT IN THIS BATCH", min_value=1, value=1, key="ship_qty")
+        shipment_qty = st.number_input("QUANTITY SENT ", min_value=1, value=1, key="ship_qty")
         shipment_date = st.date_input("DATE SENT TO OETI", key="ship_date")
         
-        ship_approval = st.selectbox("BATCH APPROVAL STATUS", ["PENDING / IN EVALUATION", "🟩 APPROVED", "🟥 NOT APPROVED"], key="ship_app")
+        ship_approval = st.selectbox(" STATUS", ["PENDING / IN EVALUATION", "🟩 APPROVED", "🟥 NOT APPROVED"], key="ship_app")
         
         ship_rejection = ""
         if ship_approval == "🟥 NOT APPROVED":
