@@ -1,213 +1,163 @@
 import streamlit as st
-import pandas as pd
-import sqlite3
-from datetime import date, datetime
+import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+import io
 
-st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification System 2026")
+# Configuração da Página
+st.set_page_config(page_title="Certification Checklist Program", layout="wide")
+st.title("📋 Certification Checklist Program")
 
-# ==========================================
-# DATABASE CONNECTION & INITIALIZATION
-# ==========================================
-def connect_db():
-    return sqlite3.connect("oeko_tex_isolated_tabs_v21.db")
+# Inicializar estados para salvar os dados na sessão
+if 'project_data' not in st.session_state:
+    st.session_state.project_data = {}
 
-def initialize_db():
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS projects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT UNIQUE,
-            article_number TEXT, model_no TEXT, bom_status TEXT, protocol_type TEXT
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS project_checklist (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
-            box_num TEXT, phase TEXT, task TEXT, status TEXT, last_update TEXT
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS production_components (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
-            category TEXT, material_name TEXT, doc_type TEXT, certificate_num TEXT, expiry_date TEXT,
-            mockup_status TEXT, mockup_approved TEXT, production_order TEXT, related_articles TEXT,
-            seam_ready_qty INTEGER, seam_sent_oeti_qtd INTEGER, comments TEXT
-        )
-    """)
-    cursor.execute("SELECT COUNT(*) FROM projects")
-    if cursor.fetchone() == 0:
-        cursor.execute("""
-            INSERT INTO projects (project_name, article_number, model_no, bom_status, protocol_type) 
-            VALUES (?, ?, ?, ?, ?)
-        """, ("35. ta-d winter + rain parkas", "409 130 - 409 110", "4100-M-ZR-ZH-U", "BOM-L + BOM-C", "New Certification"))
-    conn.commit()
-    conn.close()
+# --- FUNÇÃO AUXILIAR PARA COR DE STATUS ---
+def get_status_color(status):
+    if status == "OK / TERMINADO": return "🟩 GREEN"
+    if status == "IN PROGRESS / EM PROCESSO": return "🟨 YELLOW"
+    return "🟥 RED (NOT READY / EM FALTA)"
 
-initialize_db()
-conn = connect_db()
-df_projects = pd.read_sql_query("SELECT * FROM projects", conn)
-
-col_p1, col_p2 = st.columns(2)
-with col_p1:
-    selected_project = st.selectbox("Active Project Selection", df_projects["project_name"].tolist() if not df_projects.empty else ["No projects found"])
-with col_p2:
-    with st.popover("➕ Create New Project"):
-        with st.form("add_project_form", clear_on_submit=True):
-            p_name = st.text_input("Project Name / Code")
-            if st.form_submit_button("Create Baseline"):
-                if p_name:
-                    try:
-                        cursor = conn.cursor()
-                        cursor.execute("INSERT INTO projects (project_name, article_number, model_no, bom_status, protocol_type) VALUES (?, '', '', '', 'New Certification')", (p_name,))
-                        conn.commit()
-                        st.success("Project generated!")
-                        st.rerun()
-                    except sqlite3.IntegrityError:
-                        st.error("Project name already exists.")
-
-if not df_projects.empty and selected_project != "No projects found":
-    df_filtered_proj = df_projects[df_projects["project_name"] == selected_project]
-    if not df_filtered_proj.empty:
-        proj_row = df_filtered_proj.iloc
-        active_project_id = int(proj_row["id"])
+# --- FUNÇÃO PARA ALERTA DE VENCIMENTO (ABA 2) ---
+def check_expiration(exp_date):
+    today = datetime.date.today()
+    if exp_date < today:
+        return "🟥 EXPIRED!", "error"
+    elif (exp_date - today).days == 1:
+        return "🟨 WARNING: Expires Tomorrow!", "warning"
     else:
-        active_project_id = 0
-else:
-    active_project_id = 0
+        return "🟩 Valid", "success"
 
-opcoes_exatas = ["Technical documentation SPLAG", "Technical documentation confirmed", "Measurement chart", "Measurement check of sample", "Care label"]
-if active_project_id > 0:
-    cursor = conn.cursor()
-    for tarefa_nome in opcoes_exatas:
-        cursor.execute("SELECT COUNT(*) FROM project_checklist WHERE project_id = ? AND task = ? AND box_num = '2'", (active_project_id, tarefa_nome))
-        if cursor.fetchone() == 0:
-            cursor.execute("INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, '2', 'Technical Documentation', ?, 'Pending', '')", (active_project_id, tarefa_nome))
-    
-    tarefas_extras = [
-        ("4", "Sample Garment", "Sample in progress"), ("4", "Sample Garment", "Sample revision at KUNG"),
-        ("4", "Sample Garment", "Sample confirmed"), ("4", "Sample Garment", "Sample sent to OETI!"),
-        ("4", "Sample Mock-up", "Mock-ups needed"), ("4", "Sample Mock-up", "Seam samples ready"),
-        ("4", "Sample Mock-up", "Fabric needed"), ("4", "Sample Mock-up", "Fabric sent to OETI"),
-        ("5", "Finalisation", "Technical sheet revision"), ("5", "Finalisation", "BOM revision"), ("5", "Finalisation", "Care label revision")
-    ]
-    for b_num, ph, tk in tarefas_extras:
-        cursor.execute("SELECT COUNT(*) FROM project_checklist WHERE project_id = ? AND task = ? AND box_num = ?", (active_project_id, tk, b_num))
-        if cursor.fetchone() == 0:
-            cursor.execute("INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, ?, ?, ?, 'Pending', '')", (active_project_id, b_num, ph, tk))
-    conn.commit()
-
-df_checklist = pd.read_sql_query(f"SELECT * FROM project_checklist WHERE project_id = {active_project_id}", conn)
-df_components = pd.read_sql_query(f"SELECT * FROM production_components WHERE project_id = {active_project_id}", conn)
-conn.close()
-
-detailed_categories = ["Fabric", "Zipper", "Lining", "Elastic", "Button", "Thread", "Reflex", "Velcro"]
-today = date.today()
-if active_project_id > 0:
-    with st.expander("📝 Project Header & Certification Status", expanded=True):
-        with st.form("edit_project_header"):
-            col_h1, col_h2 = st.columns(2)
-            with col_h1:
-                st.markdown("#### 🔍 Project Context")
-                h_article = col_h1.text_input("Article Number", value=proj_row["article_number"])
-                h_model = col_h2 = col_h1.text_input("Model No.", value=proj_row["model_no"])
-                h_bom = col_h1.text_input("BOM Status", value=proj_row["bom_status"])
-            with col_h2:
-                st.markdown("#### 📑 Protocol Type")
-                lista_protocolos = ["New Certification", "Application for extension", "Re-certification"]
-                status_salvo = proj_row["protocol_type"] if "protocol_type" in proj_row and proj_row["protocol_type"] else "New Certification"
-                index_proto = lista_protocolos.index(status_salvo) if status_salvo in lista_protocolos else 0
-                tipo_protocolo = st.radio("Select Certification Status for this Project:", lista_protocolos, index=index_proto)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.form_submit_button("Save Project & Certification Records"):
-                conn = connect_db()
-                conn.execute("UPDATE projects SET article_number=?, model_no=?, bom_status=?, protocol_type=? WHERE id=?", (h_article, h_model, h_bom, tipo_protocolo, active_project_id))
-                conn.commit()
-                conn.close()
-                st.success("Project records synchronized!")
-                st.rerun()
-
-st.markdown("---")
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📦 1: Expiry & Add", "📑 2: Documentation", "🛠️ 3: Database Logs", "👕 4: Samples & Mock-ups", "🏁 5: Finalisation"
+# ----------------- NAVEGAÇÃO POR ABAS -----------------
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "1. Project Info", 
+    "2. Documents", 
+    "3. Technical Documentation", 
+    "4. Sample Garment", 
+    "5. Sample Mockups", 
+    "6. Finalisation"
 ])
+
+# ================= TAB 1: PROJECT INFO =================
 with tab1:
-    st.header("1️⃣ 1: Certificate Expiry Control")
-    alarms_triggered = []
-    if not df_components.empty:
-        for idx, r in df_components.iterrows():
-            try:
-                exp_date = datetime.strptime(r["expiry_date"], "%Y-%m-%d").date()
-                dias_restantes = (exp_date - today).days
-                if r["doc_type"] == "OEKO-Tex Standard 100" and dias_restantes <= 1:
-                    alarms_triggered.append(f"⚠️ **OEKO-TEX ALERT:** {r['material_name']} ({r['category']}) expires tomorrow or is invalid!")
-                elif r["doc_type"] != "OEKO-Tex Standard 100" and dias_restantes <= 21:
-                    alarms_triggered.append(f"⚠️ **TEST REPORT ALERT (3 WEEKS):** {r['material_name']} ({r['doc_type']}) expires in {dias_restantes} days.")
-            except: pass
+    st.header("Project Identification")
+    project_name = st.text_input("PROJECT NAME", value="Project Alpha")
+    folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value="F-2026-001")
+    model_name = st.text_input("MODEL", value="Standard V1")
+    article_name_t1 = st.text_input("ARTICLE", value="Premium Cotton Fabric")
+    
+    cert_type = st.radio(
+        "CERTIFICATION TYPE",
+        ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"]
+    )
 
-    if alarms_triggered:
-        for alarm in alarms_triggered: st.warning(alarm)
-    else: st.success("✅ All certification timelines for this project are safe.")
-
-    with st.form("box1_flat_form", clear_on_submit=True):
-        st.markdown("#### 📥 Register New Component / Material Document")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            c_cat = st.selectbox("Component Option", detailed_categories, key="b1_cat")
-            c_name = st.text_input("Material Name / Reference")
-        with c2:
-            c_type = st.selectbox("Document Protocol", ["OEKO-Tex Standard 100", "Test Report Fabric", "Test Report Accessories"], key="b1_type")
-            c_num = st.text_input("Certificate Unique ID")
-        with c3:
-            c_exp = st.date_input("Document Expiry Date", today, key="b1_date")
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.form_submit_button("Save Item Validity Data"):
-                if c_name and active_project_id > 0:
-                    conn = connect_db()
-                    conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
-                    conn.commit()
-                    conn.close()
-                    st.rerun()
-
+# ================= TAB 2: DOCUMENTS =================
 with tab2:
-    st.header("2️⃣ 2: Project Documentation & Validation Checklist")
-    if not df_checklist.empty:
-        conn = connect_db()
-        f_box2 = df_checklist[df_checklist["box_num"] == "2"]
-        st.markdown("#### Document Status & Color Tracking")
-        for tarefa_nome in opcoes_exatas:
-            registro = f_box2[f_box2["task"] == tarefa_nome]
-            status_actual = registro.iloc["status"] if not registro.empty else "Pending"
-            id_tarefa = int(registro.iloc["id"]) if not registro.empty else None
-            
-            if status_actual == "Completed":
-                cor_fundo, texto_cor = "#d4edda", "#155724"
-            elif status_actual == "In Progress":
-                cor_fundo, texto_cor = "#fff3cd", "#856404"
-            else:
-                cor_fundo, texto_cor = "#f8d7da", "#721c24"
-                
-            st.markdown(f'<div style="background-color: {cor_fundo}; padding: 12px; border-radius: 8px; margin-bottom: 5px; border-left: 6px solid {texto_cor};"><strong style="color: {texto_cor}; font-size: 16px;">{tarefa_nome} — Status: {status_actual}</strong></div>', unsafe_allow_html=True)
-            lista_status = ["Pending", "In Progress", "Completed"]
-            index_atual = lista_status.index(status_actual) if status_actual in lista_status else 0
-            novo_status = st.selectbox(f"Update: {tarefa_nome}", lista_status, index=index_atual, key=f"status_box2_{id_tarefa}", label_visibility="collapsed")
-            if novo_status != status_actual and id_tarefa:
-                conn.execute("UPDATE project_checklist SET status=? WHERE id=?", (novo_status, id_tarefa))
-                conn.commit()
-                conn.close()
-                st.rerun()
-        conn.close()
-    else: st.info("No checklist benchmarks found.")
+    st.header("Materials & Document Expiration")
+    
+    # Seleção de tipo de material
+    material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"])
+    doc_art_name = st.text_input("ARTICLE NAME (Doc)", value=article_name_t1)
+    doc_art_num = st.text_input("ARTICLE NUMBER", value="ART-9922")
+    
+    # Opções adicionais
+    col1, col2, col3 = st.columns(3)
+    with col1: oekotex = st.checkbox("OEKO-TEX")
+    with col2: text_report = st.checkbox("TEXT REPORT")
+    with col3: add_bom = st.checkbox("ADD BOM")
+    
+    # Controle de Vencimento
+    expiration_date = st.date_input("EXPIRATION DATE", datetime.date.today() + datetime.timedelta(days=2))
+    alert_msg, alert_type = check_expiration(expiration_date)
+    
+    if alert_type == "error": st.error(alert_msg)
+    elif alert_type == "warning": st.warning(alert_msg)
+    else: st.success(alert_msg)
 
+# ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
-    st.header("3️⃣ 3: Active Component Database Overview")
-    sub_tabs = st.tabs(detailed_categories)
-    for idx, name_cat in enumerate(detailed_categories):
-        with sub_tabs[idx]:
-            if not df_components.empty:
-                df_f = df_components[df_components["category"] == name_cat]
-                if not df_f.empty:
-                    st.dataframe(df_f[["material_name", "doc_type", "certificate_num", "expiry_date", "mockup_status", "mockup_approved", "production_order", "related_articles", "seam_ready_qty", "seam_sent_oeti_qtd", "comments"]], use_container_width=True)
-                else: st.info("No active records found for this category.")
-            else: st.info("Database is currently empty.")
+    st.header("Technical Documentation Status")
+    status_options = ["NOT READY / EM FALTA", "IN PROGRESS / EM PROCESSO", "OK / TERMINADO"]
+    
+    t_splag = st.selectbox("TECHNICAL DOCUMENTATION SPLAG", status_options)
+    t_confirmed = st.selectbox("TECHNICAL DOCUMENTATION CONFIRMED", status_options)
+    m_chart = st.selectbox("MEASUREMENT CHART", status_options)
+    m_check = st.selectbox("MEASUREMENT CHECK OF SAMPLE", status_options)
+    saved_folder = st.selectbox("SAVED IN FOLDER", status_options)
+    label_status = st.selectbox("LABEL", status_options)
+    
+    # Exibição visual de cores rápida
+    st.write(f"SPLAG: {get_status_color(t_splag)} | Confirmed: {get_status_color(t_confirmed)} | Folder: {get_status_color(saved_folder)}")
 
+# ================= TAB 4: SAMPLE GARMENT =================
+with tab4:
+    st.header("Sample Garment Tracking")
+    
+    s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options)
+    s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options)
+    s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options)
+    s_sent_oeti = st.selectbox("SAMPLE SENT TO OETI", status_options)
+    s_excel = st.selectbox("SAMPLE ENTERED IN 'OVERVIEW OF REQUIRED SAMPLE (EXCEL FILE)'", status_options)
+    
+    col_made, col_sent = st.columns(2)
+    with col_made:
+        samples_made = st.number_input("QUANTITY OF SAMPLES MADE", min_value=0, value=1)
+        date_made = st.date_input("DATE SAMPLES MADE")
+    with col_sent:
+        samples_sent = st.number_input("QUANTITY OF SAMPLES SENT TO OETI", min_value=0, value=1)
+        date_sent = st.date_input("DATE SAMPLES SENT TO OETI")
+
+# ================= TAB 5: SAMPLE MOCKUPS =================
+with tab5:
+    st.header("Sample Mockups Details")
+    
+    mockup_article = st.text_input("ARTICLE OF MOCKUPS", value="Mock-UX Fabric")
+    mockups_ready = st.selectbox("MOCK-UPS READY Status", status_options)
+    
+    st.subheader("Fabric Information")
+    fabric_used = st.text_input("FABRIC USED")
+    roll_number = st.text_input("ROLL NUMBER")
+    fabric_number = st.text_input("FABRIC NUMBER")
+    date_sent_lab = st.date_input("WHEN WAS IT SENT TO LABORATORY?")
+    
+    st.write(f"Mockups Readiness: {get_status_color(mockups_ready)}")
+
+# ================= TAB 6: FINALISATION =================
+with tab6:
+    st.header("Finalisation & PDF Export")
+    
+    bom_revision = st.selectbox("BOM REVISION", status_options)
+    m_chart_revision = st.selectbox("MEASUREMENT CHART REVISION", status_options)
+    care_label = st.selectbox("CARE LABEL", status_options)
+    cert_docs = st.selectbox("CERTIFICATES DOCS ARCHIVE", status_options)
+    inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options)
+    
+    st.markdown("---")
+    
+    # Compilar dados para gerar o relatório
+    if st.button("Generate Final Certification Report (PDF)"):
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        story.append(Paragraph(f"<b>Certification Report: {project_name}</b>", styles['Title']))
+        story.append(Spacer(1, 12))
+        story.append(Paragraph(f"Folder Number: {folder_number}", styles['Normal']))
+        story.append(Paragraph(f"Certification Type: {cert_type}", styles['Normal']))
+        story.append(Spacer(1, 12))
+        story.append(Paragraph(f"<b>Tab 3 Status - SPLAG:</b> {t_splag}", styles['Normal']))
+        story.append(Paragraph(f"<b>Tab 4 Status - Sent to OETI:</b> {s_sent_oeti} ({samples_sent} sent)", styles['Normal']))
+        story.append(Paragraph(f"<b>Tab 6 Status - Care Label:</b> {care_label}", styles['Normal']))
+        
+        doc.build(story)
+        buffer.seek(0)
+        
+        st.success("PDF report compiled successfully!")
+        st.download_button(
+            label="📥 Download PDF Certification Document",
+            data=buffer,
+            file_name=f"Report_{project_name}.pdf",
+            mime="application/pdf"
+        )
