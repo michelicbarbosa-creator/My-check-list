@@ -1,24 +1,21 @@
 import streamlit as st
 import datetime
 import sqlite3
-import io
 
-# Configuração da Página
+# Configuração Base da Página
 st.set_page_config(page_title="Certification Checklist Program", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# Inicializar listas na sessão para permitir múltiplos materiais
+# Inicializar listas na sessão para múltiplos materiais
 if 'materials_list' not in st.session_state:
     st.session_state.materials_list = []
 
-# --- OPÇÕES DE CORES DIRETAS PARA AS CAIXAS ---
 status_options = [
     "🟥 RED (NOT READY / EM FALTA)", 
     "🟨 YELLOW (IN PROGRESS / EM PROCESSO)", 
     "🟩 GREEN (OK / TERMINADO)"
 ]
 
-# --- LÓGICA DE ALERTA DE VENCIMENTO ---
 def check_expiration(exp_date):
     today = datetime.date.today()
     if exp_date < today:
@@ -47,7 +44,7 @@ with tab1:
     add_bom = st.checkbox("ADD BOM (Bill of Materials)")
     bom_notes = st.text_area("BOM NOTES / REVISIONS (e.g., BOM 1 for main fabric, BOM 2 for lining)", value="")
 
-# ================= TAB 2: DOCUMENTS (MÚLTIPLOS ITENS) =================
+# ================= TAB 2: DOCUMENTS =================
 with tab2:
     st.header("Materials & Document Expiration")
     st.subheader("Add Material Item")
@@ -69,13 +66,9 @@ with tab2:
     
     if st.button("➕ Add Material to Project List"):
         new_material = {
-            "type": material,
-            "name": doc_art_name,
-            "number": doc_art_num,
-            "oekotex": "YES" if oekotex else "NO",
-            "report": "YES" if text_report else "NO",
-            "expiry": str(expiration_date),
-            "status": alert_msg
+            "type": material, "name": doc_art_name, "number": doc_art_num,
+            "oekotex": "YES" if oekotex else "NO", "report": "YES" if text_report else "NO",
+            "expiry": str(expiration_date), "status": alert_msg
         }
         st.session_state.materials_list.append(new_material)
         st.success(f"Added {material} ({doc_art_num}) to the list below!")
@@ -191,28 +184,19 @@ CERTIFICATION CHECKLIST LIVE PREVIEW
     st.markdown("---")
     col_db, col_csv = st.columns(2)
     
-    # 🗄️ BOTÃO 1: GUARDAR NA BASE DE DADOS
     with col_db:
         if st.button("💾 Save Progress to Database"):
             try:
                 conn = sqlite3.connect('checklist_database.db')
                 cursor = conn.cursor()
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS projects (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT, folder_number TEXT, material TEXT, saved_at TEXT
-                    )
-                ''')
-                cursor.execute('''
-                    INSERT INTO projects (project_name, folder_number, material, saved_at) 
-                    VALUES (?, ?, ?, ?)
-                ''', (project_name, folder_number, material, str(datetime.datetime.now())))
+                cursor.execute("CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY AUTOINCREMENT, p_name TEXT, f_num TEXT, mat TEXT, s_at TEXT)")
+                cursor.execute("INSERT INTO projects (p_name, f_num, mat, s_at) VALUES (?, ?, ?, ?)", (project_name, folder_number, material, str(datetime.datetime.now())))
                 conn.commit()
                 conn.close()
                 st.success("🎉 All checklist items safely saved to the database!")
             except Exception as db_err:
                 st.error(f"Database error: {db_err}")
 
-    # 📊 BOTÃO 2: DESCARREGAR DOCUMENTO
     with col_csv:
         st.download_button(
             label="📊 Download Complete Document (TXT/Excel)",
@@ -228,3 +212,14 @@ search_query = st.text_input("Search by Project Name, Folder Number, or Material
 
 try:
     conn = sqlite3.connect('checklist_database.db')
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY AUTOINCREMENT, p_name TEXT, f_num TEXT, mat TEXT, s_at TEXT)")
+    cursor.execute("SELECT p_name, f_num, mat, s_at FROM projects ORDER BY s_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    
+    if rows:
+        for item in rows:
+            p_name, f_num, mat, s_at = item
+            show_record = True
+            if search_query:
