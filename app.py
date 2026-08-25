@@ -1,143 +1,5 @@
-import streamlit as st
-import pandas as pd
-import sqlite3
-from datetime import date, datetime
-
-st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification System 2026")
-
-# ==========================================
-# DATABASE CONNECTION & INITIALIZATION
-# ==========================================
-def connect_db():
-    return sqlite3.connect("oeko_tex_isolated_tabs_v19.db")
-
-def initialize_db():
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS projects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT UNIQUE,
-            article_number TEXT, model_no TEXT, bom_status TEXT, protocol_type TEXT
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS project_checklist (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
-            box_num TEXT, phase TEXT, task TEXT, status TEXT, last_update TEXT
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS production_components (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER,
-            category TEXT, material_name TEXT, doc_type TEXT, certificate_num TEXT, expiry_date TEXT,
-            mockup_status TEXT, mockup_approved TEXT, production_order TEXT, related_articles TEXT,
-            seam_ready_qty INTEGER, seam_sent_oeti_qtd INTEGER, comments TEXT
-        )
-    """)
-    cursor.execute("SELECT COUNT(*) FROM projects")
-    if cursor.fetchone() == 0:
-        cursor.execute("""
-            INSERT INTO projects (project_name, article_number, model_no, bom_status, protocol_type) 
-            VALUES (?, ?, ?, ?, ?)
-        """, ("35. ta-d winter + rain parkas", "409 130 - 409 110", "4100-M-ZR-ZH-U", "BOM-L + BOM-C", "New Certification"))
-    conn.commit()
-    conn.close()
-
-initialize_db()
-conn = connect_db()
-df_projects = pd.read_sql_query("SELECT * FROM projects", conn)
-
-col_p1, col_p2 = st.columns(2)
-with col_p1:
-    selected_project = st.selectbox("Active Project Selection", df_projects["project_name"].tolist() if not df_projects.empty else ["No projects found"])
-with col_p2:
-    with st.popover("➕ Create New Project"):
-        with st.form("add_project_form", clear_on_submit=True):
-            p_name = st.text_input("Project Name / Code")
-            if st.form_submit_button("Create Baseline"):
-                if p_name:
-                    try:
-                        cursor = conn.cursor()
-                        cursor.execute("INSERT INTO projects (project_name, article_number, model_no, bom_status, protocol_type) VALUES (?, '', '', '', 'New Certification')", (p_name,))
-                        conn.commit()
-                        st.success("Project generated!")
-                        st.rerun()
-                    except sqlite3.IntegrityError:
-                        st.error("Project name already exists.")
-
-if not df_projects.empty and selected_project != "No projects found":
-    df_filtered_proj = df_projects[df_projects["project_name"] == selected_project]
-    if not df_filtered_proj.empty:
-        proj_row = df_filtered_proj.iloc[0]
-        active_project_id = int(proj_row["id"])
-    else: active_project_id = 0
-else: active_project_id = 0
-
-# --- AUTO-SEED DATA INJECTION FOR SAFETY ---
-if active_project_id > 0:
-    cursor = conn.cursor()
-    opcoes_exatas = ["Technical documentation SPLAG", "Technical documentation confirmed", "Measurement chart", "Measurement check of sample", "Care label"]
-    for tarefa_nome in opcoes_exatas:
-        cursor.execute("SELECT COUNT(*) FROM project_checklist WHERE project_id = ? AND task = ? AND box_num = '2'", (active_project_id, tarefa_nome))
-        if cursor.fetchone() == 0:
-            cursor.execute("INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, '2', 'Technical Documentation', ?, 'Pending', '')", (active_project_id, tarefa_nome))
-    
-    tarefas_extras = [
-        ("4", "Sample Garment", "Sample in progress"), ("4", "Sample Garment", "Sample revision at KUNG"),
-        ("4", "Sample Garment", "Sample confirmed"), ("4", "Sample Garment", "Sample sent to OETI!"),
-        ("4", "Sample Mock-up", "Mock-ups needed"), ("4", "Sample Mock-up", "Seam samples ready"),
-        ("4", "Sample Mock-up", "Fabric needed"), ("4", "Sample Mock-up", "Fabric sent to OETI"),
-        ("5", "Finalisation", "Technical sheet revision"), ("5", "Finalisation", "BOM revision"), ("5", "Finalisation", "Care label revision")
-    ]
-    for b_num, ph, tk in tarefas_extras:
-        cursor.execute("SELECT COUNT(*) FROM project_checklist WHERE project_id = ? AND task = ? AND box_num = ?", (active_project_id, tk, b_num))
-        if cursor.fetchone() == 0:
-            cursor.execute("INSERT INTO project_checklist (project_id, box_num, phase, task, status, last_update) VALUES (?, ?, ?, ?, 'Pending', '')", (active_project_id, b_num, ph, tk))
-    conn.commit()
-
-# Reload records after seeding
-df_checklist = pd.read_sql_query(f"SELECT * FROM project_checklist WHERE project_id = {active_project_id}", conn)
-df_components = pd.read_sql_query(f"SELECT * FROM production_components WHERE project_id = {active_project_id}", conn)
-conn.close()
-
-detailed_categories = ["Fabric", "Zipper", "Lining", "Elastic", "Button", "Thread", "Reflex", "Velcro"]
-today = date.today()
-
-# ==========================================
-# BLOCK UNIFIED: PROJECT HEADER & PROTOCOL STATUS
-# ==========================================
-if active_project_id > 0:
-    with st.expander("📝 Project Header & Certification Status", expanded=True):
-        with st.form("edit_project_header"):
-            col_h1, col_h2 = st.columns(2)
-            with col_h1:
-                st.markdown("#### 🔍 Project Context")
-                h_article = st.text_input("Article Number", value=proj_row["article_number"])
-                h_model = st.text_input("Model No.", value=proj_row["model_no"])
-                h_bom = st.text_input("BOM Status", value=proj_row["bom_status"])
-            with col_h2:
-                st.markdown("#### 📑 Protocol Type")
-                lista_protocolos = ["New Certification", "Application for extension", "Re-certification"]
-                status_salvo = proj_row["protocol_type"] if "protocol_type" in proj_row and proj_row["protocol_type"] else "New Certification"
-                index_proto = lista_protocolos.index(status_salvo) if status_salvo in lista_protocolos else 0
-                tipo_protocolo = st.radio("Select Certification Status for this Project:", lista_protocolos, index=index_proto)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.form_submit_button("Save Project & Certification Records"):
-                conn = connect_db()
-                conn.execute("UPDATE projects SET article_number=?, model_no=?, bom_status=?, protocol_type=? WHERE id=?", (h_article, h_model, h_bom, tipo_protocolo, active_project_id))
-                conn.commit()
-                conn.close()
-                st.success("Project records synchronized!")
-                st.rerun()
-
-st.markdown("---")
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📦 1: Documentation", "📑 :Technical Documentation", "👕 3:Sample Garment ", "👕 4: Samples Mock-ups", "🏁 5: Finalisation"
-])
-
-# ==========================================
-# 1️⃣ BOX 1: Focumentation
+imp# ==========================================
+# 1️⃣ BOX 1: Docu
 # ==========================================
 with tab1:
     st.header("1️⃣ : Documentation")
@@ -175,8 +37,13 @@ with tab1:
                     conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
                     conn.commit()
                     conn.close()
-    with tab3:
-    st.header("3️⃣: Sample Garment")
+                    st.rerun()
+
+# ==========================================
+# 🛠️ BOX 3: documentos aquivo (CORRIGIDO)
+# ==========================================
+with tab3:
+    st.header("3️: Oekotex / Test report")
     if not df_components.empty:
         sub_tabs = st.tabs(detailed_categories)
         for idx, name_cat in enumerate(detailed_categories):
@@ -188,7 +55,6 @@ with tab1:
                     st.info("No active validation logs found for this specific category.")
     else:
         st.info("No items mapped to database records yet.")
-                st.rerun()
 
 # ==========================================
 # 📑 BOX 2: DOCUMENTATION COLOR CARDS
