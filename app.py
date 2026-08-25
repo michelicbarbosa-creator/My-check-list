@@ -13,9 +13,9 @@ if 'oeti_shipments' not in st.session_state:
 
 # Status options limpas e com NO NEED
 status_options = [
-    "🟥 NO NEED", 
-    "🟨 IN PROGRESS / EM PROCESSO", 
-    "🟩 GREEN / OK / TERMINADO"
+    "🟥 NO NEED/ NOT READY", 
+    "🟨 IN PROGRESS", 
+    "🟩 OK / TERMINADO"
 ]
 
 def check_expiration(exp_date):
