@@ -1,4 +1,3 @@
-# ================= TAB 6: FINALISATION =================
 with tab6:
     st.header("Finalisation, Database & PDF Export")
     bom_revision = st.selectbox("BOM REVISION", status_options, index=0)
