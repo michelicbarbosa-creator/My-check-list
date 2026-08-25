@@ -1,4 +1,2 @@
-```text
-   streamlit
-   reportlab
-   xlsxwriter
+streamlit
+xlsxwriter
