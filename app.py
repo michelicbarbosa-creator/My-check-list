@@ -175,7 +175,20 @@ with tab1:
                     conn.execute("INSERT INTO production_components (project_id, category, material_name, doc_type, certificate_num, expiry_date, mockup_status, mockup_approved, production_order, related_articles, seam_ready_qty, seam_sent_oeti_qtd, comments) VALUES (?, ?, ?, ?, ?, ?, 'Mock-ups needed', 'Pending', '', '', 0, 0, '')", (active_project_id, c_cat, c_name, c_type, c_num, str(c_exp)))
                     conn.commit()
                     conn.close()
-                    st.rerun()
+    with tab3:
+    st.header("3️⃣  3: Sample Garment")
+    if not df_components.empty:
+        sub_tabs = st.tabs(detailed_categories)
+        for idx, name_cat in enumerate(detailed_categories):
+            with sub_tabs[idx]:
+                df_f = df_components[df_components["category"] == name_cat]
+                if not df_f.empty:
+                    st.dataframe(df_f[["material_name", "doc_type", "certificate_num", "expiry_date", "mockup_status", "mockup_approved", "production_order", "related_articles", "seam_ready_qty", "seam_sent_oeti_qtd", "comments"]], use_container_width=True)
+                else:
+                    st.info("No active validation logs found for this specific category.")
+    else:
+        st.info("No items mapped to database records yet.")
+                st.rerun()
 
 # ==========================================
 # 📑 BOX 2: DOCUMENTATION COLOR CARDS
