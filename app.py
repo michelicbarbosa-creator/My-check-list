@@ -164,7 +164,7 @@ with tab5:
     fabric_number = st.text_input("FABRIC NUMBER")
     date_sent_lab = st.date_input("WHEN WAS IT SENT TO LABORATORY?")
 
-# ================= TAB 7: CAMPOS DE FINALIZAÇÃO =================
+# ================= TAB 7: CAMPOS DE FINALIZAÇÃO (DECLARADOS ANTES DO USO) =================
 with tab7:
     st.header("Finalisation & Database Management")
     bom_revision = st.selectbox("BOM REVISION", status_options, index=0)
