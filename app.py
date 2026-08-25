@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 import sqlite3
+import io
 
 # Configuração da Página
 st.set_page_config(page_title="Certification Checklist Program", layout="wide")
@@ -44,7 +45,6 @@ with tab1:
     
     st.markdown("---")
     add_bom = st.checkbox("ADD BOM (Bill of Materials)")
-    # Caixa de observação para múltiplas BOMs
     bom_notes = st.text_area("BOM NOTES / REVISIONS (e.g., BOM 1 for main fabric, BOM 2 for lining)", value="")
 
 # ================= TAB 2: DOCUMENTS (MÚLTIPLOS ITENS) =================
@@ -67,7 +67,6 @@ with tab2:
     elif alert_type == "warning": st.warning(alert_msg)
     else: st.success(alert_msg)
     
-    # Botão para adicionar à lista em memória
     if st.button("➕ Add Material to Project List"):
         new_material = {
             "type": material,
@@ -140,55 +139,53 @@ with tab6:
     cert_docs = st.selectbox("CERTIFICATES DOCS ARCHIVE", status_options, index=0)
     inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options, index=0)
     
-    # --- SECÇÃO DE PRÉ-VISUALIZAÇÃO ANTES DE IMPRIMIR ---
     st.markdown("---")
     st.subheader("👀 Checklist Report Preview (Review before download)")
     
-    preview_text = f"""
-    ==================================================
-    CERTIFICATION CHECKLIST LIVE PREVIEW
-    ==================================================
-    [TAB 1] PROJECT INFO
-    - Project Name: {project_name}
-    - Folder Number: {folder_number}
-    - Model Name: {model_name}
-    - Certification Type: {cert_type}
-    - BOM Attached: {"YES" if add_bom else "NO"}
-    - BOM Notes & Variations: {bom_notes if bom_notes else "None"}
+    preview_text = f"""==================================================
+CERTIFICATION CHECKLIST LIVE PREVIEW
+==================================================
+[TAB 1] PROJECT INFO
+- Project Name: {project_name}
+- Folder Number: {folder_number}
+- Model Name: {model_name}
+- Certification Type: {cert_type}
+- BOM Attached: {"YES" if add_bom else "NO"}
+- BOM Notes & Variations: {bom_notes if bom_notes else "None"}
+
+[TAB 2] ADDED MATERIALS"""
     
-    [TAB 2] ADDED MATERIALS
-    """
     if st.session_state.materials_list:
         for idx, m in enumerate(st.session_state.materials_list):
-            preview_text += f"\n    ({idx+1}) {m['type']} | Art: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})"
+            preview_text += f"\n  ({idx+1}) {m['type']} | Art: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})"
     else:
-        preview_text += "\n    No material items added to this project."
+        preview_text += "\n  No material items added to this project."
         
     preview_text += f"""
+
+[TAB 3] TECHNICAL DOCUMENTATION STATUS
+- SPLAG: {t_splag}
+- Confirmed: {t_confirmed}
+- Measurement Chart: {m_chart}
+- Measurement Check: {m_check}
+- Saved in Folder: {saved_folder}
+- Label: {label_status}
+
+[TAB 4] SAMPLE GARMENT TRACKING
+- In Progress: {s_inprogress} | Revision Kung: {s_revision}
+- Confirmed: {s_confirmed} | Sent OETI: {s_sent_oeti}
+- Samples Made Qty: {samples_made} on {date_made}
+- Sent to OETI Qty: {samples_sent} on {date_sent}
+
+[TAB 5] SAMPLE MOCKUPS
+- Mock-ups Status: {mockups_ready} | Article: {mockup_article}
+- Fabric Used: {fabric_used} | Roll: {roll_number} | Fabric Num: {fabric_number}
+
+[TAB 6] FINALISATION
+- BOM Revision: {bom_revision} | Chart Revision: {m_chart_revision}
+- Care Label: {care_label} | Docs Archive: {cert_docs} | Inspection: {inspec_report}
+=================================================="""
     
-    [TAB 3] TECHNICAL DOCUMENTATION STATUS
-    - SPLAG: {t_splag}
-    - Confirmed: {t_confirmed}
-    - Measurement Chart: {m_chart}
-    - Measurement Check: {m_check}
-    - Saved in Folder: {saved_folder}
-    - Label: {label_status}
-    
-    [TAB 4] SAMPLE GARMENT TRACKING
-    - In Progress: {s_inprogress} | Revision Kung: {s_revision}
-    - Confirmed: {s_confirmed} | Sent OETI: {s_sent_oeti}
-    - Samples Made Qty: {samples_made} on {date_made}
-    - Sent to OETI Qty: {samples_sent} on {date_sent}
-    
-    [TAB 5] SAMPLE MOCKUPS
-    - Mock-ups Status: {mockups_ready} | Article: {mockup_article}
-    - Fabric Used: {fabric_used} | Roll: {roll_number} | Fabric Num: {fabric_number}
-    
-    [TAB 6] FINALISATION
-    - BOM Revision: {bom_revision} | Chart Revision: {m_chart_revision}
-    - Care Label: {care_label} | Docs Archive: {cert_docs} | Inspection: {inspec_report}
-    ==================================================
-    """
     st.code(preview_text, language="text")
     
     st.markdown("---")
@@ -205,18 +202,29 @@ with tab6:
                         id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT, folder_number TEXT, material TEXT, saved_at TEXT
                     )
                 ''')
-                # Salva o resumo de materiais principais na busca rápida
-                mat_summary = material if not st.session_state.materials_list else st.session_state.materials_list[0]['type']
                 cursor.execute('''
                     INSERT INTO projects (project_name, folder_number, material, saved_at) 
                     VALUES (?, ?, ?, ?)
-                ''', (project_name, folder_number, mat_summary, str(datetime.datetime.now())))
+                ''', (project_name, folder_number, material, str(datetime.datetime.now())))
                 conn.commit()
                 conn.close()
-                st.success("🎉 Checklist data and material log successfully saved!")
+                st.success("🎉 All checklist items safely saved to the database!")
             except Exception as db_err:
                 st.error(f"Database error: {db_err}")
 
-    # 📊 BOTÃO 2: DESCARREGAR DOCUMENTO EXCEL (CSV)
+    # 📊 BOTÃO 2: DESCARREGAR DOCUMENTO
     with col_csv:
         st.download_button(
+            label="📊 Download Complete Document (TXT/Excel)",
+            data=preview_text,
+            file_name=f"Full_Report_{folder_number}.txt",
+            mime="text/plain"
+        )
+
+# ================= 🔍 VISUALIZADOR DA BASE DE DADOS COM FILTRO =================
+st.markdown("---")
+st.subheader("🔍 Search & Filter Saved Checklists")
+search_query = st.text_input("Search by Project Name, Folder Number, or Material Type:", value="")
+
+try:
+    conn = sqlite3.connect('checklist_database.db')
