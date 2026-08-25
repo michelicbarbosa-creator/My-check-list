@@ -5,9 +5,9 @@ from datetime import date, datetime
 
 st.set_page_config(layout="wide", page_title="OEKO-Tex Master Certification System 2026")
 
-==========================================
-DATABASE CONNECTION & INITIALIZATION
-==========================================
+#==========================================
+#DATABASE CONNECTION & INITIALIZATION
+#==========================================
 def connect_db():
 return sqlite3.connect("oeko_tex_isolated_tabs_v16.db")
 
