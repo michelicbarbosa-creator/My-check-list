@@ -2,7 +2,6 @@ import streamlit as st
 import datetime
 import sqlite3
 import io
-import pandas as pd
 
 # Configuração da Página
 st.set_page_config(page_title="Certification Checklist Program", layout="wide")
@@ -15,8 +14,8 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project_name TEXT, folder_number TEXT, model_name TEXT, article_name_t1 TEXT, cert_type TEXT,
-            material TEXT, doc_art_name TEXT, doc_art_num TEXT, oekotex INTEGER, text_report INTEGER, add_bom INTEGER, expiration_date TEXT,
+            project_name TEXT, folder_number TEXT, model_name TEXT, article_name_t1 TEXT, cert_type TEXT, add_bom INTEGER,
+            material TEXT, doc_art_name TEXT, doc_art_num TEXT, oekotex INTEGER, text_report INTEGER, expiration_date TEXT,
             t_splag TEXT, t_confirmed TEXT, m_chart TEXT, m_check TEXT, saved_folder TEXT, label_status TEXT,
             s_inprogress TEXT, s_revision TEXT, s_confirmed TEXT, s_sent_oeti TEXT, s_excel TEXT, samples_made INTEGER, date_made TEXT, samples_sent INTEGER, date_sent TEXT,
             mockup_article TEXT, mockups_ready TEXT, fabric_used TEXT, roll_number TEXT, fabric_number TEXT, date_sent_lab TEXT,
@@ -60,6 +59,10 @@ with tab1:
     model_name = st.text_input("MODEL", value="Standard V1")
     article_name_t1 = st.text_input("ARTICLE", value="Premium Cotton Fabric")
     cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"])
+    
+    # ADD BOM movido para a Aba 1
+    st.markdown("---")
+    add_bom = st.checkbox("ADD BOM (Bill of Materials)")
 
 # ================= TAB 2: DOCUMENTS =================
 with tab2:
@@ -68,11 +71,11 @@ with tab2:
     doc_art_name = st.text_input("ARTICLE NAME (Doc)", value=article_name_t1)
     doc_art_num = st.text_input("ARTICLE NUMBER", value="ART-9922")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1: oekotex = st.checkbox("OEKO-TEX")
     with col2: text_report = st.checkbox("TEXT REPORT")
-    with col3: add_bom = st.checkbox("ADD BOM")
     
+    st.markdown("---")
     expiration_date = st.date_input("EXPIRATION DATE", datetime.date.today() + datetime.timedelta(days=2))
     alert_msg, alert_type = check_expiration(expiration_date)
     if alert_type == "error": st.error(alert_msg)
@@ -128,7 +131,7 @@ with tab6:
     inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options, index=0)
     
     st.markdown("---")
-    col_db, col_xls = st.columns(2)
+    col_db, col_csv = st.columns(2)
     
     # 🗄️ BOTÃO 1: GUARDAR NA BASE DE DADOS
     with col_db:
@@ -137,16 +140,16 @@ with tab6:
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO projects (
-                    project_name, folder_number, model_name, article_name_t1, cert_type,
-                    material, doc_art_name, doc_art_num, oekotex, text_report, add_bom, expiration_date,
+                    project_name, folder_number, model_name, article_name_t1, cert_type, add_bom,
+                    material, doc_art_name, doc_art_num, oekotex, text_report, expiration_date,
                     t_splag, t_confirmed, m_chart, m_check, saved_folder, label_status,
                     s_inprogress, s_revision, s_confirmed, s_sent_oeti, s_excel, samples_made, date_made, samples_sent, date_sent,
                     mockup_article, mockups_ready, fabric_used, roll_number, fabric_number, date_sent_lab,
                     bom_revision, m_chart_revision, care_label, cert_docs, inspec_report
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ''', (
-                project_name, folder_number, model_name, article_name_t1, cert_type,
-                material, doc_art_name, doc_art_num, int(oekotex), int(text_report), int(add_bom), str(expiration_date),
+                project_name, folder_number, model_name, article_name_t1, cert_type, int(add_bom),
+                material, doc_art_name, doc_art_num, int(oekotex), int(text_report), str(expiration_date),
                 t_splag, t_confirmed, m_chart, m_check, saved_folder, label_status,
                 s_inprogress, s_revision, s_confirmed, s_sent_oeti, s_excel, samples_made, str(date_made), samples_sent, str(date_sent),
                 mockup_article, mockups_ready, fabric_used, roll_number, fabric_number, str(date_sent_lab),
@@ -156,39 +159,48 @@ with tab6:
             conn.close()
             st.success("🎉 All checklist items safely saved to the database!")
 
-    # 📊 BOTÃO 2: GERAR RELATÓRIO COMPLETO EXCEL (Limpo de erros de sintaxe)
-    with col_xls:
-        # Preparação do dicionário plano simples
-        report_data = {
-            "Checklist Item / Field": [
-                "Project Name", "Folder Number", "Model Name", "Certification Type",
-                "Material Type", "Document Expiration", "OEKO-TEX Checklist", "Text Report", "BOM Anexado",
-                "TECH DOC SPLAG", "TECH DOC CONFIRMED", "MEASUREMENT CHART", "SAVED IN FOLDER", "LABEL STATUS",
-                "SAMPLE IN PROGRESS", "SAMPLE SENT TO OETI", "SAMPLES MADE QTY", "MOCK-UPS READY STATUS",
-                "BOM REVISION", "MEASUREMENT CHART REVISION", "CARE LABEL", "CERTIFICATES ARCHIVE"
-            ],
-            "Value / Status Selected": [
-                project_name, folder_number, model_name, cert_type,
-                material, f"{expiration_date} ({alert_msg})", str(oekotex), str(text_report), str(add_bom),
-                t_splag, t_confirmed, m_chart, saved_folder, label_status,
-                s_inprogress, f"{s_sent_oeti} (Sent: {samples_sent})", str(samples_made), mockups_ready,
-                bom_revision, m_chart_revision, care_label, cert_docs
-            ]
-        }
-        df_export = pd.DataFrame(report_data)
+    # 📊 BOTÃO 2: GERAR DOCUMENTO DE RELATÓRIO (Formato Excel CSV de Texto)
+    with col_csv:
+        csv_lines = [
+            "CHECKLIST ITEM / FIELD;VALUE / STATUS SELECTED",
+            f"Project Name;{project_name}",
+            f"Folder Number;{folder_number}",
+            f"Model Name;{model_name}",
+            f"Certification Type;{cert_type}",
+            f"BOM Added (Tab 1);{add_bom}",
+            f"Material Type;{material}",
+            f"Document Expiration;{expiration_date} ({alert_msg})",
+            f"OEKO-TEX Checklist;{oekotex}",
+            f"Text Report;{text_report}",
+            f"TECH DOC SPLAG;{t_splag}",
+            f"TECH DOC CONFIRMED;{t_confirmed}",
+            f"MEASUREMENT CHART;{m_chart}",
+            f"SAVED IN FOLDER;{saved_folder}",
+            f"LABEL STATUS;{label_status}",
+            f"SAMPLE IN PROGRESS;{s_inprogress}",
+            f"SAMPLE SENT TO OETI;{s_sent_oeti} (Qty: {samples_sent})",
+            f"SAMPLES MADE QTY;{samples_made}",
+            f"MOCK-UPS READY STATUS;{mockups_ready}",
+            f"BOM REVISION;{bom_revision}",
+            f"MEASUREMENT CHART REVISION;{m_chart_revision}",
+            f"CARE LABEL;{care_label}",
+            f"CERTIFICATES ARCHIVE;{cert_docs}"
+        ]
         
-        # Converte para bytes sem usar bibliotecas visuais complexas
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_export.to_excel(writer, sheet_name='Checklist Report', index=False)
-        processed_data = output.getvalue()
-
+        csv_data = "\n".join(csv_lines)
+        
         st.download_button(
-            label="📊 Download Complete Excel Report",
-            data=processed_data,
-            file_name=f"Report_{folder_number}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            label="📊 Download Complete Excel Document (CSV)",
+            data=csv_data,
+            file_name=f"Report_{folder_number}.csv",
+            mime="text/csv"
         )
 
     # ================= 🔍 VISUALIZADOR DA BASE DE DADOS COM FILTRO =================
-
+    st.markdown("---")
+    st.subheader("🔍 Search & Filter Saved Checklists")
+    
+    search_query = st.text_input("Search by Project Name, Folder Number, or Material Type:", value="")
+    
+    conn = sqlite3.connect('checklist_database.db')
+    try:
