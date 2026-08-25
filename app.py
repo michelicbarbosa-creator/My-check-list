@@ -1,3 +1,128 @@
+import streamlit as st
+import datetime
+import sqlite3
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+import io
+import pandas as pd
+
+# Configuração da Página
+st.set_page_config(page_title="Certification Checklist Program", layout="wide")
+st.title("📋 Certification Checklist Program")
+
+# ================= 🗄️ CONFIGURAÇÃO DA BASE DE DADOS =================
+def init_db():
+    conn = sqlite3.connect('checklist_database.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_name TEXT, folder_number TEXT, model_name TEXT, article_name_t1 TEXT, cert_type TEXT,
+            material TEXT, doc_art_name TEXT, doc_art_num TEXT, oekotex INTEGER, text_report INTEGER, add_bom INTEGER, expiration_date TEXT,
+            t_splag TEXT, t_confirmed TEXT, m_chart TEXT, m_check TEXT, saved_folder TEXT, label_status TEXT,
+            s_inprogress TEXT, s_revision TEXT, s_confirmed TEXT, s_sent_oeti TEXT, s_excel TEXT, samples_made INTEGER, date_made TEXT, samples_sent INTEGER, date_sent TEXT,
+            mockup_article TEXT, mockups_ready TEXT, fabric_used TEXT, roll_number TEXT, fabric_number TEXT, date_sent_lab TEXT,
+            bom_revision TEXT, m_chart_revision TEXT, care_label TEXT, cert_docs TEXT, inspec_report TEXT,
+            saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# --- OPÇÕES DE CORES DIRETAS PARA AS CAIXAS ---
+status_options = [
+    "🟥 RED (NOT READY / EM FALTA)", 
+    "🟨 YELLOW (IN PROGRESS / EM PROCESSO)", 
+    "🟩 GREEN (OK / TERMINADO)"
+]
+
+# --- LÓGICA DE ALERTA DE VENCIMENTO ---
+def check_expiration(exp_date):
+    today = datetime.date.today()
+    if exp_date < today:
+        return "🟥 EXPIRED!", "error"
+    elif (exp_date - today).days == 1:
+        return "🟨 WARNING: Expires Tomorrow!", "warning"
+    else:
+        return "🟩 Valid Document", "success"
+
+# ================= 🧭 NAVEGAÇÃO POR ABAS =================
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "1. Project Info", "2. Documents", "3. Technical Documentation", 
+    "4. Sample Garment", "5. Sample Mockups", "6. Finalisation & Database"
+])
+
+# ================= TAB 1: PROJECT INFO =================
+with tab1:
+    st.header("Project Identification")
+    project_name = st.text_input("PROJECT NAME", value="Project Alpha")
+    folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value="F-2026-001")
+    model_name = st.text_input("MODEL", value="Standard V1")
+    article_name_t1 = st.text_input("ARTICLE", value="Premium Cotton Fabric")
+    cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"])
+
+# ================= TAB 2: DOCUMENTS =================
+with tab2:
+    st.header("Materials & Document Expiration")
+    material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"])
+    doc_art_name = st.text_input("ARTICLE NAME (Doc)", value=article_name_t1)
+    doc_art_num = st.text_input("ARTICLE NUMBER", value="ART-9922")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1: oekotex = st.checkbox("OEKO-TEX")
+    with col2: text_report = st.checkbox("TEXT REPORT")
+    with col3: add_bom = st.checkbox("ADD BOM")
+    
+    expiration_date = st.date_input("EXPIRATION DATE", datetime.date.today() + datetime.timedelta(days=2))
+    alert_msg, alert_type = check_expiration(expiration_date)
+    if alert_type == "error": st.error(alert_msg)
+    elif alert_type == "warning": st.warning(alert_msg)
+    else: st.success(alert_msg)
+
+# ================= TAB 3: TECHNICAL DOCUMENTATION =================
+with tab3:
+    st.header("Technical Documentation Status")
+    t_splag = st.selectbox("TECHNICAL DOCUMENTATION SPLAG", status_options, index=0)
+    t_confirmed = st.selectbox("TECHNICAL DOCUMENTATION CONFIRMED", status_options, index=0)
+    m_chart = st.selectbox("MEASUREMENT CHART", status_options, index=0)
+    m_check = st.selectbox("MEASUREMENT CHECK OF SAMPLE", status_options, index=0)
+    saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0)
+    label_status = st.selectbox("LABEL", status_options, index=0)
+
+# ================= TAB 4: SAMPLE GARMENT =================
+with tab4:
+    st.header("Sample Garment Tracking")
+    s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0)
+    s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=0)
+    s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=0)
+    s_sent_oeti = st.selectbox("SAMPLE SENT TO OETI", status_options, index=0)
+    s_excel = st.selectbox("SAMPLE ENTERED IN 'OVERVIEW OF REQUIRED SAMPLE (EXCEL FILE)'", status_options, index=0)
+    
+    col_made, col_sent = st.columns(2)
+    with col_made:
+        samples_made = st.number_input("QUANTITY OF SAMPLES MADE", min_value=0, value=1)
+        date_made = st.date_input("DATE SAMPLES MADE")
+    with col_sent:
+        samples_sent = st.number_input("QUANTITY OF SAMPLES SENT TO OETI", min_value=0, value=1)
+        date_sent = st.date_input("DATE SAMPLES SENT TO OETI")
+
+# ================= TAB 5: SAMPLE MOCKUPS =================
+with tab5:
+    st.header("Sample Mockups Details")
+    mockup_article = st.text_input("ARTICLE OF MOCKUPS", value="Mock-UX Fabric")
+    mockups_ready = st.selectbox("MOCK-UPS READY Status", status_options, index=0)
+    
+    st.subheader("Fabric Information")
+    fabric_used = st.text_input("FABRIC USED")
+    roll_number = st.text_input("ROLL NUMBER")
+    fabric_number = st.text_input("FABRIC NUMBER")
+    date_sent_lab = st.date_input("WHEN WAS IT SENT TO LABORATORY?")
+
+# ================= TAB 6: FINALISATION =================
 with tab6:
     st.header("Finalisation, Database & PDF Export")
     bom_revision = st.selectbox("BOM REVISION", status_options, index=0)
@@ -57,79 +182,3 @@ with tab6:
                 [Paragraph("<b>[TAB 1] Certification Type</b>", body_style), Paragraph(cert_type, body_style)],
                 [Paragraph("<b>[TAB 2] Material Type</b>", body_style), Paragraph(material, body_style)],
                 [Paragraph("<b>[TAB 2] Document Expiration</b>", body_style), Paragraph(f"{expiration_date} ({alert_msg})", body_style)],
-                [Paragraph("<b>[TAB 2] OEKO-TEX / TEXT REPORT</b>", body_style), Paragraph(f"OEKO: {oekotex} | Report: {text_report} | BOM: {add_bom}", body_style)],
-                [Paragraph("<b>[TAB 3] TECH DOCUMENTATION SPLAG</b>", body_style), Paragraph(t_splag, body_style)],
-                [Paragraph("<b>[TAB 3] TECH DOCUMENTATION CONFIRMED</b>", body_style), Paragraph(t_confirmed, body_style)],
-                [Paragraph("<b>[TAB 3] MEASUREMENT CHART</b>", body_style), Paragraph(m_chart, body_style)],
-                [Paragraph("<b>[TAB 3] SAVED IN FOLDER / LABEL</b>", body_style), Paragraph(f"Folder: {saved_folder} | Label: {label_status}", body_style)],
-                [Paragraph("<b>[TAB 4] SAMPLE IN PROGRESS</b>", body_style), Paragraph(s_inprogress, body_style)],
-                [Paragraph("<b>[TAB 4] SAMPLE SENT TO OETI</b>", body_style), Paragraph(f"{s_sent_oeti} (Qty: {samples_sent} on {date_sent})", body_style)],
-                [Paragraph("<b>[TAB 5] MOCK-UPS READY STATUS</b>", body_style), Paragraph(mockups_ready, body_style)],
-                [Paragraph("<b>[TAB 5] Fabric / Roll / Fabric No.</b>", body_style), Paragraph(f"{fabric_used} / {roll_number} / {fabric_number}", body_style)],
-                [Paragraph("<b>[TAB 6] BOM REVISION</b>", body_style), Paragraph(bom_revision, body_style)],
-                [Paragraph("<b>[TAB 6] MEASUREMENT CHART REVISION</b>", body_style), Paragraph(m_chart_revision, body_style)],
-                [Paragraph("<b>[TAB 6] CARE LABEL</b>", body_style), Paragraph(care_label, body_style)],
-                [Paragraph("<b>[TAB 6] CERTIFICATES DOCS ARCHIVE</b>", body_style), Paragraph(cert_docs, body_style)],
-                [Paragraph("<b>[TAB 6] INSPECTION REPORT</b>", body_style), Paragraph(inspec_report, body_style)]
-            ]
-            
-            table = Table(all_items_data, colWidths=[250, 300])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (1,0), colors.HexColor("#2B6CB0")),
-                ('TEXTCOLOR', (0,0), (1,0), colors.whitesmoke),
-                ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-                ('TOPPADDING', (0,0), (-1,-1), 6),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ]))
-            
-            story.append(table)
-            doc.build(story)
-            buffer.seek(0)
-            
-            st.download_button(
-                label="📥 Download Complete PDF Report",
-                data=buffer,
-                file_name=f"Full_Report_{folder_number}.pdf",
-                mime="application/pdf"
-            )
-
-    # ================= 🔍 VISUALIZADOR DA BASE DE DADOS COM FILTRO =================
-    st.markdown("---")
-    st.subheader("🔍 Search & Filter Saved Checklists")
-    
-    # Campo de Texto para Pesquisa Global
-    search_query = st.text_input("Search by Project Name, Folder Number, or Material Type:", value="")
-    
-    conn = sqlite3.connect('checklist_database.db')
-    import pandas as pd
-    try:
-        # Carregar todas as colunas relevantes para permitir filtros avançados
-        query = "SELECT id, project_name, folder_number, material, cert_type, expiration_date, saved_at FROM projects ORDER BY saved_at DESC"
-        df = pd.read_sql_query(query, conn)
-        
-        if not df.empty:
-            # Aplicar o filtro se o usuário digitou alguma coisa
-            if search_query:
-                search_query = search_query.lower()
-                filtered_df = df[
-                    df['project_name'].str.lower().str.contains(search_query, na=False) |
-                    df['folder_number'].str.lower().str.contains(search_query, na=False) |
-                    df['material'].str.lower().str.contains(search_query, na=False)
-                ]
-                
-                if not filtered_df.empty:
-                    st.write(f"🔍 Found {len(filtered_df)} match(es):")
-                    st.dataframe(filtered_df, use_container_width=True)
-                else:
-                    st.warning("No records matched your search terms.")
-            else:
-                # Se a barra estiver vazia, mostra todo o histórico
-                st.write("📊 Showing all historical records:")
-                st.dataframe(df, use_container_width=True)
-        else:
-            st.info("No records found in database yet. Fill out the form and click Save above.")
-    except Exception as e:
-        st.error(f"Error loading database: {e}")
-    finally:
-        conn.close()
