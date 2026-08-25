@@ -1,10 +1,6 @@
 import streamlit as st
 import datetime
 import sqlite3
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
 import io
 import pandas as pd
 
@@ -124,7 +120,7 @@ with tab5:
 
 # ================= TAB 6: FINALISATION =================
 with tab6:
-    st.header("Finalisation, Database & PDF Export")
+    st.header("Finalisation, Database & Report Export")
     bom_revision = st.selectbox("BOM REVISION", status_options, index=0)
     m_chart_revision = st.selectbox("MEASUREMENT CHART REVISION", status_options, index=0)
     care_label = st.selectbox("CARE LABEL", status_options, index=0)
@@ -132,7 +128,7 @@ with tab6:
     inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options, index=0)
     
     st.markdown("---")
-    col_db, col_pdf = st.columns(2)
+    col_db, col_xls = st.columns(2)
     
     # 🗄️ BOTÃO 1: GUARDAR NA BASE DE DADOS
     with col_db:
@@ -160,42 +156,39 @@ with tab6:
             conn.close()
             st.success("🎉 All checklist items safely saved to the database!")
 
-    # 📄 BOTÃO 2: GERAR RELATÓRIO COMPLETO
-    with col_pdf:
-        if st.button("📄 Compile Full Report (PDF)"):
-            buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
-            styles = getSampleStyleSheet()
-            
-            title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor("#1A365D"), alignment=1)
-            body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontSize=10, leading=14)
-            
-            story = []
-            story.append(Paragraph("<b>CERTIFICATION CHECKLIST FINAL REPORT</b>", title_style))
-            story.append(Spacer(1, 15))
-            
-                        all_items_data = [
-                [Paragraph("<b>CHECKLIST ITEM / FIELD</b>", body_style), Paragraph("<b>VALUE / STATUS SELECTED</b>", body_style)],
-                [Paragraph("<b>[TAB 1] Project Name</b>", body_style), Paragraph(project_name, body_style)],
-                [Paragraph("<b>[TAB 1] Folder Number</b>", body_style), Paragraph(folder_number, body_style)],
-                [Paragraph("<b>[TAB 1] Model Name</b>", body_style), Paragraph(model_name, body_style)],
-                [Paragraph("<b>[TAB 1] Certification Type</b>", body_style), Paragraph(cert_type, body_style)],
-                [Paragraph("<b>[TAB 2] Material Type</b>", body_style), Paragraph(material, body_style)],
-                [Paragraph("<b>[TAB 2] Document Expiration</b>", body_style), Paragraph(f"{expiration_date} ({alert_msg})", body_style)],
-                [Paragraph("<b>[TAB 2] OEKO-TEX / TEXT REPORT</b>", body_style), Paragraph(f"OEKO: {oekotex} | Report: {text_report} | BOM: {add_bom}", body_style)],
-                [Paragraph("<b>[TAB 3] TECH DOCUMENTATION SPLAG</b>", body_style), Paragraph(t_splag, body_style)],
-                [Paragraph("<b>[TAB 3] TECH DOCUMENTATION CONFIRMED</b>", body_style), Paragraph(t_confirmed, body_style)],
-                [Paragraph("<b>[TAB 3] MEASUREMENT CHART</b>", body_style), Paragraph(m_chart, body_style)],
-                [Paragraph("<b>[TAB 3] SAVED IN FOLDER / LABEL</b>", body_style), Paragraph(f"Folder: {saved_folder} | Label: {label_status}", body_style)],
-                [Paragraph("<b>[TAB 4] SAMPLE IN PROGRESS</b>", body_style), Paragraph(s_inprogress, body_style)],
-                [Paragraph("<b>[TAB 4] SAMPLE SENT TO OETI</b>", body_style), Paragraph(f"{s_sent_oeti} (Qty: {samples_sent} on {date_sent})", body_style)],
-                [Paragraph("<b>[TAB 5] MOCK-UPS READY STATUS</b>", body_style), Paragraph(mockups_ready, body_style)],
-                [Paragraph("<b>[TAB 5] Fabric / Roll / Fabric No.</b>", body_style), Paragraph(f"{fabric_used} / {roll_number} / {fabric_number}", body_style)],
-                [Paragraph("<b>[TAB 6] BOM REVISION</b>", body_style), Paragraph(bom_revision, body_style)],
-                [Paragraph("<b>[TAB 6] MEASUREMENT CHART REVISION</b>", body_style), Paragraph(m_chart_revision, body_style)],
-                [Paragraph("<b>[TAB 6] CARE LABEL</b>", body_style), Paragraph(care_label, body_style)],
-                [Paragraph("<b>[TAB 6] CERTIFICATES DOCS ARCHIVE</b>", body_style), Paragraph(cert_docs, body_style)],
-                [Paragraph("<b>[TAB 6] INSPECTION REPORT</b>", body_style), Paragraph(inspec_report, body_style)]
+    # 📊 BOTÃO 2: GERAR RELATÓRIO COMPLETO EXCEL (Limpo de erros de sintaxe)
+    with col_xls:
+        # Preparação do dicionário plano simples
+        report_data = {
+            "Checklist Item / Field": [
+                "Project Name", "Folder Number", "Model Name", "Certification Type",
+                "Material Type", "Document Expiration", "OEKO-TEX Checklist", "Text Report", "BOM Anexado",
+                "TECH DOC SPLAG", "TECH DOC CONFIRMED", "MEASUREMENT CHART", "SAVED IN FOLDER", "LABEL STATUS",
+                "SAMPLE IN PROGRESS", "SAMPLE SENT TO OETI", "SAMPLES MADE QTY", "MOCK-UPS READY STATUS",
+                "BOM REVISION", "MEASUREMENT CHART REVISION", "CARE LABEL", "CERTIFICATES ARCHIVE"
+            ],
+            "Value / Status Selected": [
+                project_name, folder_number, model_name, cert_type,
+                material, f"{expiration_date} ({alert_msg})", str(oekotex), str(text_report), str(add_bom),
+                t_splag, t_confirmed, m_chart, saved_folder, label_status,
+                s_inprogress, f"{s_sent_oeti} (Sent: {samples_sent})", str(samples_made), mockups_ready,
+                bom_revision, m_chart_revision, care_label, cert_docs
             ]
-            
-            table = Table(all_items_data, colWidths=[250, 250])
+        }
+        df_export = pd.DataFrame(report_data)
+        
+        # Converte para bytes sem usar bibliotecas visuais complexas
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_export.to_excel(writer, sheet_name='Checklist Report', index=False)
+        processed_data = output.getvalue()
+
+        st.download_button(
+            label="📊 Download Complete Excel Report",
+            data=processed_data,
+            file_name=f"Report_{folder_number}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    # ================= 🔍 VISUALIZADOR DA BASE DE DADOS COM FILTRO =================
+
