@@ -130,10 +130,9 @@ st.markdown("---")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
 "📦 1: Documentation", "📑 2: Technical Documentation", "👕 3: sample garmwnt", "👕 4: Samples Mock-ups", "🏁 5: Finalisation"
 ])
-
-==========================================
-1️⃣ 1: ADD
-==========================================
+#==========================================
+#1️⃣ 1: ADD
+#==========================================
 with tab1:
 st.header("1️⃣ 1: documentation")
 alarms_triggered = []
@@ -172,9 +171,9 @@ conn.commit()
 conn.close()
 st.rerun()
 
-==========================================
-📑 2: DOCUMENTATION
-==========================================
+#==========================================
+#📑 2: DOCUMENTATION
+#==========================================
 with tab2:
 st.header("2️⃣ : Technical Documentation")
 
@@ -264,9 +263,9 @@ st.rerun()
 conn.close()
 
 
-==========================================
-📑 3: Sample Garment
-==========================================
+#==========================================
+📑 3: #Sample Garment
+#==========================================
 with tab3:
 st.header("3️⃣ 3: Sample Garment")
 if not df_components.empty:
@@ -281,9 +280,9 @@ st.info("No active validation logs found for this specific category.")
 else:
 st.info("No items mapped to database records yet.")
 
-==========================================
-📑 4: Sample Mockup
-==========================================
+#==========================================
+#📑 4: Sample Mockup
+#==========================================
 with tab4:
 st.header("4️⃣ 4: Sample Mock-up")
 if not df_checklist.empty:
@@ -323,9 +322,9 @@ conn.close()
 else:
 st.info("No active milestones mapped to this project registry.")
 
-==========================================
-📑 5: Finalisation
-==========================================
+#==========================================
+#📑 5: Finalisation
+#==========================================
 with tab5:
 st.header("5️⃣ 5: Project Finalisation ")
 if not df_checklist.empty:
