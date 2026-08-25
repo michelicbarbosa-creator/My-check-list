@@ -6,7 +6,7 @@ import sqlite3
 st.set_page_config(page_title="Certification Checklist", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# Inicialização segura das listas dinâmicas em memória
+# Memória temporária para as listas dinâmicas das abas
 if 'materials_list' not in st.session_state:
     st.session_state.materials_list = []
 if 'oeti_shipments' not in st.session_state:
@@ -27,10 +27,15 @@ def check_expiration(exp_date):
     else:
         return "🟩 Valid Document", "success"
 
-# --- ESTRUTURA DAS 7 ABAS ---
+# --- NOVA ESTRUTURA EXPANDIDA PARA 7 ABAS ---
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "1. Project Info", "2. Documents (Multi-Material)", "3. Technical Documentation", 
-    "4. Sample Garment (Multi-Shipment)", "5. Sample Mockups", "6. Preview Report", "7. Save & Download"
+    "1. Project Info", 
+    "2. Documents (Multi-Material)", 
+    "3. Technical Documentation", 
+    "4. Sample Garment (Multi-Shipment)", 
+    "5. Sample Mockups", 
+    "6. Preview Report",
+    "7. Save & Download"
 ])
 
 # ================= TAB 1: PROJECT INFO =================
@@ -78,7 +83,8 @@ with tab2:
     st.markdown("---")
     st.subheader("📋 Current Project Materials List")
     if st.session_state.materials_list:
-        st.dataframe(st.session_state.materials_list, use_container_width=True)
+        for idx, m in enumerate(st.session_state.materials_list):
+            st.text(f"[{idx+1}] {m['type']} - Art: {m['name']} ({m['number']}) | OEKO: {m['oekotex']} | Report: {m['report']} | Expires: {m['expiry']} ({m['status']})")
         if st.button("🗑️ Clear Materials List"):
             st.session_state.materials_list = []
             st.rerun()
@@ -95,7 +101,7 @@ with tab3:
     saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0)
     label_status = st.selectbox("LABEL", status_options, index=0)
 
-# ================= TAB 4: SAMPLE GARMENT (MÚLTIPLOS ENVIOS COM APROVAÇÃO) =================
+# ================= TAB 4: SAMPLE GARMENT =================
 with tab4:
     st.header("Sample Garment Tracking")
     s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0)
@@ -116,6 +122,7 @@ with tab4:
         st.write("Record a specific shipment batch to OETI with its status:")
         shipment_qty = st.number_input("QUANTITY SENT IN THIS BATCH", min_value=1, value=1, key="ship_qty")
         shipment_date = st.date_input("DATE SENT TO OETI", key="ship_date")
+        
         ship_approval = st.selectbox("BATCH APPROVAL STATUS", ["PENDING / IN EVALUATION", "🟩 APPROVED", "🟥 NOT APPROVED"], key="ship_app")
         
         ship_rejection = ""
@@ -128,14 +135,17 @@ with tab4:
                 status_text += f" (Reason: {ship_rejection})"
                 
             st.session_state.oeti_shipments.append({
-                "qty": shipment_qty, "date": str(shipment_date), "approval": status_text
+                "qty": shipment_qty, 
+                "date": str(shipment_date),
+                "approval": status_text
             })
             st.success(f"Logged shipment batch on {shipment_date}!")
 
     st.markdown("---")
     st.subheader("🚚 History of Registered OETI Shipments")
     if st.session_state.oeti_shipments:
-        st.dataframe(st.session_state.oeti_shipments, use_container_width=True)
+        for idx, s in enumerate(st.session_state.oeti_shipments):
+            st.text(f"📦 Shipment #{idx+1}: {s['qty']} sample(s) sent on {s['date']} | Status: {s['approval']}")
         if st.button("🗑️ Clear Shipment History"):
             st.session_state.oeti_shipments = []
             st.rerun()
@@ -147,6 +157,8 @@ with tab5:
     st.header("Sample Mockups Details")
     mockup_article = st.text_input("ARTICLE OF MOCKUPS", value="Mock-UX Fabric")
     mockups_ready = st.selectbox("MOCK-UPS READY Status", status_options, index=0)
+    
+    st.subheader("Fabric Information")
     fabric_used = st.text_input("FABRIC USED")
     roll_number = st.text_input("ROLL NUMBER")
     fabric_number = st.text_input("FABRIC NUMBER")
@@ -161,7 +173,7 @@ with tab7:
     cert_docs = st.selectbox("CERTIFICATES DOCS ARCHIVE", status_options, index=0)
     inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options, index=0)
 
-# --- CONSTRUÇÃO DO TEXTO DO RELATÓRIO SEM LOOPS COMPLEXOS DE OUTROS ENVIOS ---
+# --- CONSTRUÇÃO DO TEXTO DO RELATÓRIO ---
 lines = []
 lines.append("CERTIFICATION CHECKLIST REPORT\tVALUE / STATUS")
 lines.append("==================================================\t====================")
@@ -173,6 +185,14 @@ lines.append(f"Article Name:\t{article_name_t1}")
 lines.append(f"Certification Type:\t{cert_type}")
 lines.append(f"BOM Attached:\t{'YES' if add_bom else 'NO'}")
 lines.append(f"BOM Notes & Variations:\t{bom_notes if bom_notes else 'None'}")
+
+lines.append(f"\n[TAB 2] ADDED MATERIALS\t")
+if st.session_state.materials_list:
+    for idx, m in enumerate(st.session_state.materials_list):
+        lines.append(f"Material #{idx+1} ({m['type']}):\tArt: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})")
+else:
+    lines.append("Materials List:\tNo material items added to this project.")
+    
 lines.append(f"\n[TAB 3] TECHNICAL DOCUMENTATION STATUS\t")
 lines.append(f"TECHNICAL DOCUMENTATION SPLAG:\t{t_splag}")
 lines.append(f"TECHNICAL DOCUMENTATION CONFIRMED:\t{t_confirmed}")
@@ -180,29 +200,15 @@ lines.append(f"MEASUREMENT CHART:\t{m_chart}")
 lines.append(f"MEASUREMENT CHECK OF SAMPLE:\t{m_check}")
 lines.append(f"SAVED IN FOLDER:\t{saved_folder}")
 lines.append(f"LABEL:\t{label_status}")
-lines.append(f"\n[TAB 4] SAMPLE GARMENT\t")
+
+lines.append(f"\n[TAB 4] SAMPLE GARMENT & APPROVAL\t")
 lines.append(f"SAMPLE IN PROGRESS:\t{s_inprogress}")
 lines.append(f"SAMPLE REVISION AT KUNG:\t{s_revision}")
 lines.append(f"SAMPLE CONFIRMED:\t{s_confirmed}")
 lines.append(f"SAMPLE SENT TO OETI:\t{s_sent_oeti}")
 lines.append(f"SAMPLE ENTERED IN EXCEL FILE:\t{s_excel}")
 lines.append(f"Total Samples Made:\t{samples_made} on {date_made}")
-lines.append(f"\n[TAB 5] SAMPLE MOCKUPS\t")
-lines.append(f"ARTICLE OF MOCKUPS:\t{mockup_article}")
-lines.append(f"MOCK-UPS READY Status:\t{mockups_ready}")
-lines.append(f"FABRIC USED:\t{fabric_used}")
-lines.append(f"ROLL NUMBER:\t{roll_number}")
-lines.append(f"FABRIC NUMBER:\t{fabric_number}")
-lines.append(f"WHEN WAS IT SENT TO LABORATORY:\t{date_sent_lab}")
-lines.append(f"\n[TAB 6 & 7] FINALISATION\t")
-lines.append(f"BOM REVISION:\t{bom_revision}")
-lines.append(f"MEASUREMENT CHART REVISION:\t{m_chart_revision}")
-lines.append(f"CARE LABEL:\t{care_label}")
-lines.append(f"CERTIFICATES DOCS ARCHIVE:\t{cert_docs}")
-lines.append(f"INSPECTION REPORT SAVED IN FOLDER:\t{inspec_report}")
-lines.append("==================================================\t====================")
 
-preview_text = "\n".join(lines)
-
-# ================= TAB 6: PREVIEW REPORT (EXCLUSIVA) =================
-with tab6:
+lines.append("OETI Shipment History Log:\t")
+if st.session_state.oeti_shipments:
+    for idx, s in enumerate(st.session_state.oeti_shipments):
