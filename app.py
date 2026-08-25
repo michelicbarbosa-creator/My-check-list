@@ -1,12 +1,11 @@
 import streamlit as st
 import datetime
-import sqlite3
 
-# Configuração Base da Página
-st.set_page_config(page_title="Certification Checklist Program", layout="wide")
+# Configuração Principal do Programa
+st.set_page_config(page_title="Certification Checklist", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# Inicializar listas na sessão para múltiplos materiais
+# Memória temporária para guardar os vários materiais adicionados
 if 'materials_list' not in st.session_state:
     st.session_state.materials_list = []
 
@@ -25,10 +24,10 @@ def check_expiration(exp_date):
     else:
         return "🟩 Valid Document", "success"
 
-# ================= 🧭 NAVEGAÇÃO POR ABAS =================
+# --- ESTRUTURA DAS 6 ABAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Project Info", "2. Documents (Multi-Material)", "3. Technical Documentation", 
-    "4. Sample Garment", "5. Sample Mockups", "6. Preview & Finalisation"
+    "4. Sample Garment", "5. Sample Mockups", "6. Preview & Download"
 ])
 
 # ================= TAB 1: PROJECT INFO =================
@@ -44,7 +43,7 @@ with tab1:
     add_bom = st.checkbox("ADD BOM (Bill of Materials)")
     bom_notes = st.text_area("BOM NOTES / REVISIONS (e.g., BOM 1 for main fabric, BOM 2 for lining)", value="")
 
-# ================= TAB 2: DOCUMENTS =================
+# ================= TAB 2: DOCUMENTS (MÚLTIPLOS ITENS) =================
 with tab2:
     st.header("Materials & Document Expiration")
     st.subheader("Add Material Item")
@@ -71,7 +70,7 @@ with tab2:
             "expiry": str(expiration_date), "status": alert_msg
         }
         st.session_state.materials_list.append(new_material)
-        st.success(f"Added {material} ({doc_art_num}) to the list below!")
+        st.success(f"Added {material} ({doc_art_num}) to the checklist!")
 
     st.markdown("---")
     st.subheader("📋 Current Project Materials List")
@@ -125,7 +124,7 @@ with tab5:
 
 # ================= TAB 6: PREVIEW & FINALISATION =================
 with tab6:
-    st.header("Live Preview, Database & Document Export")
+    st.header("Live Preview & Document Export")
     bom_revision = st.selectbox("BOM REVISION", status_options, index=0)
     m_chart_revision = st.selectbox("MEASUREMENT CHART REVISION", status_options, index=0)
     care_label = st.selectbox("CARE LABEL", status_options, index=0)
@@ -136,7 +135,7 @@ with tab6:
     st.subheader("👀 Checklist Report Preview (Review before download)")
     
     preview_text = f"""==================================================
-CERTIFICATION CHECKLIST LIVE PREVIEW
+CERTIFICATION CHECKLIST REPORT PREVIEW
 ==================================================
 [TAB 1] PROJECT INFO
 - Project Name: {project_name}
@@ -180,46 +179,11 @@ CERTIFICATION CHECKLIST LIVE PREVIEW
 =================================================="""
     
     st.code(preview_text, language="text")
-    
     st.markdown("---")
-    col_db, col_csv = st.columns(2)
     
-    with col_db:
-        if st.button("💾 Save Progress to Database"):
-            try:
-                conn = sqlite3.connect('checklist_database.db')
-                cursor = conn.cursor()
-                cursor.execute("CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY AUTOINCREMENT, p_name TEXT, f_num TEXT, mat TEXT, s_at TEXT)")
-                cursor.execute("INSERT INTO projects (p_name, f_num, mat, s_at) VALUES (?, ?, ?, ?)", (project_name, folder_number, material, str(datetime.datetime.now())))
-                conn.commit()
-                conn.close()
-                st.success("🎉 All checklist items safely saved to the database!")
-            except Exception as db_err:
-                st.error(f"Database error: {db_err}")
-
-    with col_csv:
-        st.download_button(
-            label="📊 Download Complete Document (TXT/Excel)",
-            data=preview_text,
-            file_name=f"Full_Report_{folder_number}.txt",
-            mime="text/plain"
-        )
-
-# ================= 🔍 VISUALIZADOR DA BASE DE DADOS COM FILTRO =================
-st.markdown("---")
-st.subheader("🔍 Search & Filter Saved Checklists")
-search_query = st.text_input("Search by Project Name, Folder Number, or Material Type:", value="")
-
-try:
-    conn = sqlite3.connect('checklist_database.db')
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY AUTOINCREMENT, p_name TEXT, f_num TEXT, mat TEXT, s_at TEXT)")
-    cursor.execute("SELECT p_name, f_num, mat, s_at FROM projects ORDER BY s_at DESC")
-    rows = cursor.fetchall()
-    conn.close()
-    
-    if rows:
-        for item in rows:
-            p_name, f_num, mat, s_at = item
-            show_record = True
-            if search_query:
+    st.download_button(
+        label="📊 Download Complete Document (TXT/Excel Compatible)",
+        data=preview_text,
+        file_name=f"Report_{folder_number}.txt",
+        mime="text/plain"
+    )
