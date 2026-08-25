@@ -5,14 +5,16 @@ import datetime
 st.set_page_config(page_title="Certification Checklist", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# Memória temporária para guardar os vários materiais adicionados
+# Memória temporária para as listas dinâmicas (Materiais e Envios)
 if 'materials_list' not in st.session_state:
     st.session_state.materials_list = []
+if 'oeti_shipments' not in st.session_state:
+    st.session_state.oeti_shipments = []
 
 status_options = [
-    "🟥 RED (NOT READY / EM FALTA)", 
-    "🟨 YELLOW (IN PROGRESS / EM PROCESSO)", 
-    "🟩 GREEN (OK / TERMINADO)"
+    "🟥  (NOT READY / NO NEED)", 
+    "🟨  (IN PROGRESS / EM PROCESSO)", 
+    "🟩  (OK / TERMINADO)"
 ]
 
 def check_expiration(exp_date):
@@ -27,7 +29,7 @@ def check_expiration(exp_date):
 # --- ESTRUTURA DAS 6 ABAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Project Info", "2. Documents (Multi-Material)", "3. Technical Documentation", 
-    "4. Sample Garment", "5. Sample Mockups", "6. Preview & Download"
+    "4. Sample Garment (Multi-Shipment)", "5. Sample Mockups", "6. Preview & Download"
 ])
 
 # ================= TAB 1: PROJECT INFO =================
@@ -93,22 +95,57 @@ with tab3:
     saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0)
     label_status = st.selectbox("LABEL", status_options, index=0)
 
-# ================= TAB 4: SAMPLE GARMENT =================
+# ================= TAB 4: SAMPLE GARMENT (MÚLTIPLOS ENVIOS E APROVAÇÃO) =================
 with tab4:
-    st.header("Sample Garment Tracking")
+    st.header("Sample Garment Tracking & Approval")
     s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0)
     s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=0)
     s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=0)
     s_sent_oeti = st.selectbox("SAMPLE SENT TO OETI", status_options, index=0)
     s_excel = st.selectbox("SAMPLE ENTERED IN 'OVERVIEW OF REQUIRED SAMPLE (EXCEL FILE)'", status_options, index=0)
     
-    col_made, col_sent = st.columns(2)
+    st.markdown("---")
+    st.subheader("🏁 OETI Approval Status")
+    
+    # Campo para definir se foi aprovado ou reprovado
+    approval_status = st.radio("SAMPLE APPROVAL STATUS", ["PENDING / IN EVALUATION", "🟩 APPROVED", "🟥 NOT APPROVED"])
+    
+    # Se for marcado como Reprovado (NOT APPROVED), abre a caixa de justificativa
+    rejection_reason = ""
+    if approval_status == "🟥 NOT APPROVED":
+        rejection_reason = st.text_area("REASON FOR REJECTION (Why wasn't it approved? Defect, wrong size, failed test?)", value="")
+    
+    st.markdown("---")
+    st.subheader("Production & OETI Shipment Log")
+    
+    col_made, col_log = st.columns(2)
     with col_made:
         samples_made = st.number_input("QUANTITY OF SAMPLES MADE", min_value=0, value=1)
         date_made = st.date_input("DATE SAMPLES MADE")
-    with col_sent:
-        samples_sent = st.number_input("QUANTITY OF SAMPLES SENT TO OETI", min_value=0, value=1)
-        date_sent = st.date_input("DATE SAMPLES SENT TO OETI")
+    
+    with col_log:
+        st.write("Record a specific shipment to OETI:")
+        shipment_qty = st.number_input("QUANTITY OF SAMPLES SENT IN THIS BATCH", min_value=1, value=1, key="ship_qty")
+        shipment_date = st.date_input("DATE SENT TO OETI", key="ship_date")
+        
+        if st.button("➕ Add Shipment to OETI List"):
+            new_shipment = {
+                "qty": shipment_qty,
+                "date": str(shipment_date)
+            }
+            st.session_state.oeti_shipments.append(new_shipment)
+            st.success(f"Logged shipment of {shipment_qty} sample(s) on {shipment_date}!")
+
+    st.markdown("---")
+    st.subheader("🚚 History of Registered OETI Shipments")
+    if st.session_state.oeti_shipments:
+        for idx, s in enumerate(st.session_state.oeti_shipments):
+            st.text(f"📦 Shipment #{idx+1}: {s['qty']} sample(s) sent on {s['date']}")
+        if st.button("🗑️ Clear Shipment History"):
+            st.session_state.oeti_shipments = []
+            st.rerun()
+    else:
+        st.info("No shipments registered yet for this project.")
 
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
@@ -163,27 +200,23 @@ CERTIFICATION CHECKLIST REPORT PREVIEW
 - Saved in Folder: {saved_folder}
 - Label: {label_status}
 
-[TAB 4] SAMPLE GARMENT TRACKING
+[TAB 4] SAMPLE GARMENT & APPROVAL
 - In Progress: {s_inprogress} | Revision Kung: {s_revision}
-- Confirmed: {s_confirmed} | Sent OETI: {s_sent_oeti}
-- Samples Made Qty: {samples_made} on {date_made}
-- Sent to OETI Qty: {samples_sent} on {date_sent}
+- Confirmed: {s_confirmed} | Sent OETI Status: {s_sent_oeti}
+- Total Samples Made: {samples_made} on {date_made}
+- Approval Status: {approval_status}"""
+
+    if approval_status == "🟥 NOT APPROVED":
+        preview_text += f"\n- Reason for Rejection: {rejection_reason if rejection_reason else 'Not specified'}"
+
+    preview_text += f"\n- OETI Shipment Log:"
+    if st.session_state.oeti_shipments:
+        for idx, s in enumerate(st.session_state.oeti_shipments):
+            preview_text += f"\n  -> Shipment #{idx+1}: {s['qty']} sample(s) on {s['date']}"
+    else:
+        preview_text += "\n  No shipments registered yet."
+
+    preview_text += f"""
 
 [TAB 5] SAMPLE MOCKUPS
 - Mock-ups Status: {mockups_ready} | Article: {mockup_article}
-- Fabric Used: {fabric_used} | Roll: {roll_number} | Fabric Num: {fabric_number}
-
-[TAB 6] FINALISATION
-- BOM Revision: {bom_revision} | Chart Revision: {m_chart_revision}
-- Care Label: {care_label} | Docs Archive: {cert_docs} | Inspection: {inspec_report}
-=================================================="""
-    
-    st.code(preview_text, language="text")
-    st.markdown("---")
-    
-    st.download_button(
-        label="📊 Download Complete Document (TXT/Excel Compatible)",
-        data=preview_text,
-        file_name=f"Report_{folder_number}.txt",
-        mime="text/plain"
-    )
