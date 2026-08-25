@@ -11,10 +11,11 @@ if 'materials_list' not in st.session_state:
 if 'oeti_shipments' not in st.session_state:
     st.session_state.oeti_shipments = []
 
+# Status options limpas e com NO NEED
 status_options = [
-    "🟥  (NOT READY / NO NEED)", 
-    "🟨  (IN PROGRESS / EM PROCESSO)", 
-    "🟩  (OK / TERMINADO)"
+    "🟥 NO NEED", 
+    "🟨 IN PROGRESS / EM PROCESSO", 
+    "🟩 GREEN / OK / TERMINADO"
 ]
 
 def check_expiration(exp_date):
@@ -26,7 +27,7 @@ def check_expiration(exp_date):
     else:
         return "🟩 Valid Document", "success"
 
-# --- ESTRUTURA DAS 6 ABAS ---
+# --- ESTRUTURA DAS 6 ABAS DIRETAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Project Info", "2. Documents (Multi-Material)", "3. Technical Documentation", 
     "4. Sample Garment (Multi-Shipment)", "5. Sample Mockups", "6. Preview & Download"
@@ -95,7 +96,7 @@ with tab3:
     saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0)
     label_status = st.selectbox("LABEL", status_options, index=0)
 
-# ================= TAB 4: SAMPLE GARMENT (MÚLTIPLOS ENVIOS E APROVAÇÃO) =================
+# ================= TAB 4: SAMPLE GARMENT =================
 with tab4:
     st.header("Sample Garment Tracking & Approval")
     s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0)
@@ -106,34 +107,25 @@ with tab4:
     
     st.markdown("---")
     st.subheader("🏁 OETI Approval Status")
-    
-    # Campo para definir se foi aprovado ou reprovado
     approval_status = st.radio("SAMPLE APPROVAL STATUS", ["PENDING / IN EVALUATION", "🟩 APPROVED", "🟥 NOT APPROVED"])
     
-    # Se for marcado como Reprovado (NOT APPROVED), abre a caixa de justificativa
     rejection_reason = ""
     if approval_status == "🟥 NOT APPROVED":
-        rejection_reason = st.text_area("REASON FOR REJECTION (Why wasn't it approved? Defect, wrong size, failed test?)", value="")
+        rejection_reason = st.text_area("REASON FOR REJECTION (Why wasn't it approved?)", value="")
     
     st.markdown("---")
     st.subheader("Production & OETI Shipment Log")
-    
     col_made, col_log = st.columns(2)
     with col_made:
         samples_made = st.number_input("QUANTITY OF SAMPLES MADE", min_value=0, value=1)
         date_made = st.date_input("DATE SAMPLES MADE")
-    
     with col_log:
         st.write("Record a specific shipment to OETI:")
         shipment_qty = st.number_input("QUANTITY OF SAMPLES SENT IN THIS BATCH", min_value=1, value=1, key="ship_qty")
         shipment_date = st.date_input("DATE SENT TO OETI", key="ship_date")
         
         if st.button("➕ Add Shipment to OETI List"):
-            new_shipment = {
-                "qty": shipment_qty,
-                "date": str(shipment_date)
-            }
-            st.session_state.oeti_shipments.append(new_shipment)
+            st.session_state.oeti_shipments.append({"qty": shipment_qty, "date": str(shipment_date)})
             st.success(f"Logged shipment of {shipment_qty} sample(s) on {shipment_date}!")
 
     st.markdown("---")
@@ -171,52 +163,44 @@ with tab6:
     st.markdown("---")
     st.subheader("👀 Checklist Report Preview (Review before download)")
     
-    preview_text = f"""==================================================
-CERTIFICATION CHECKLIST REPORT PREVIEW
-==================================================
-[TAB 1] PROJECT INFO
-- Project Name: {project_name}
-- Folder Number: {folder_number}
-- Model Name: {model_name}
-- Certification Type: {cert_type}
-- BOM Attached: {"YES" if add_bom else "NO"}
-- BOM Notes & Variations: {bom_notes if bom_notes else "None"}
-
-[TAB 2] ADDED MATERIALS"""
+    # Geração do arquivo com formatação de tabulação separada por abas (Excel nativo)
+    lines = []
+    lines.append("CERTIFICATION CHECKLIST REPORT\tVALUE / STATUS")
+    lines.append("==================================================\t====================")
     
+    # Bloco da Aba 1
+    lines.append("\n[TAB 1] PROJECT INFO\t")
+    lines.append(f"Project Name:\t{project_name}")
+    lines.append(f"Folder Number:\t{folder_number}")
+    lines.append(f"Model Name:\t{model_name}")
+    lines.append(f"Article Name:\t{article_name_t1}")
+    lines.append(f"Certification Type:\t{cert_type}")
+    lines.append(f"BOM Attached:\t{'YES' if add_bom else 'NO'}")
+    lines.append(f"BOM Notes & Variations:\t{bom_notes if bom_notes else 'None'}")
+    
+    # Bloco da Aba 2 (Com espaçamento livre antes e depois)
+    lines.append("\n[TAB 2] ADDED MATERIALS\t")
     if st.session_state.materials_list:
         for idx, m in enumerate(st.session_state.materials_list):
-            preview_text += f"\n  ({idx+1}) {m['type']} | Art: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})"
+            lines.append(f"Material #{idx+1} ({m['type']}):\tArt: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})")
     else:
-        preview_text += "\n  No material items added to this project."
+        lines.append("Materials List:\tNo material items added to this project.")
         
-    preview_text += f"""
-
-[TAB 3] TECHNICAL DOCUMENTATION STATUS
-- SPLAG: {t_splag}
-- Confirmed: {t_confirmed}
-- Measurement Chart: {m_chart}
-- Measurement Check: {m_check}
-- Saved in Folder: {saved_folder}
-- Label: {label_status}
-
-[TAB 4] SAMPLE GARMENT & APPROVAL
-- In Progress: {s_inprogress} | Revision Kung: {s_revision}
-- Confirmed: {s_confirmed} | Sent OETI Status: {s_sent_oeti}
-- Total Samples Made: {samples_made} on {date_made}
-- Approval Status: {approval_status}"""
-
-    if approval_status == "🟥 NOT APPROVED":
-        preview_text += f"\n- Reason for Rejection: {rejection_reason if rejection_reason else 'Not specified'}"
-
-    preview_text += f"\n- OETI Shipment Log:"
-    if st.session_state.oeti_shipments:
-        for idx, s in enumerate(st.session_state.oeti_shipments):
-            preview_text += f"\n  -> Shipment #{idx+1}: {s['qty']} sample(s) on {s['date']}"
-    else:
-        preview_text += "\n  No shipments registered yet."
-
-    preview_text += f"""
-
-[TAB 5] SAMPLE MOCKUPS
-- Mock-ups Status: {mockups_ready} | Article: {mockup_article}
+    # Bloco da Aba 3
+    lines.append("\n[TAB 3] TECHNICAL DOCUMENTATION STATUS\t")
+    lines.append(f"TECHNICAL DOCUMENTATION SPLAG:\t{t_splag}")
+    lines.append(f"TECHNICAL DOCUMENTATION CONFIRMED:\t{t_confirmed}")
+    lines.append(f"MEASUREMENT CHART:\t{m_chart}")
+    lines.append(f"MEASUREMENT CHECK OF SAMPLE:\t{m_check}")
+    lines.append(f"SAVED IN FOLDER:\t{saved_folder}")
+    lines.append(f"LABEL:\t{label_status}")
+    
+    # Bloco da Aba 4
+    lines.append("\n[TAB 4] SAMPLE GARMENT & APPROVAL\t")
+    lines.append(f"SAMPLE IN PROGRESS:\t{s_inprogress}")
+    lines.append(f"SAMPLE REVISION AT KUNG:\t{s_revision}")
+    lines.append(f"SAMPLE CONFIRMED:\t{s_confirmed}")
+    lines.append(f"SAMPLE SENT TO OETI:\t{s_sent_oeti}")
+    lines.append(f"SAMPLE ENTERED IN EXCEL FILE:\t{s_excel}")
+    lines.append(f"Total Samples Made:\t{samples_made} on {date_made}")
+    lines.append(f"OETI Approval Status:\t{approval_status}")
