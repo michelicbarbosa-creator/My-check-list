@@ -7,27 +7,6 @@ import io
 st.set_page_config(page_title="Certification Checklist Program", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# ================= 🗄️ CONFIGURAÇÃO DA BASE DE DADOS =================
-def init_db():
-    conn = sqlite3.connect('checklist_database.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS projects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project_name TEXT, folder_number TEXT, model_name TEXT, article_name_t1 TEXT, cert_type TEXT, add_bom INTEGER,
-            material TEXT, doc_art_name TEXT, doc_art_num TEXT, oekotex INTEGER, text_report INTEGER, expiration_date TEXT,
-            t_splag TEXT, t_confirmed TEXT, m_chart TEXT, m_check TEXT, saved_folder TEXT, label_status TEXT,
-            s_inprogress TEXT, s_revision TEXT, s_confirmed TEXT, s_sent_oeti TEXT, s_excel TEXT, samples_made INTEGER, date_made TEXT, samples_sent INTEGER, date_sent TEXT,
-            mockup_article TEXT, mockups_ready TEXT, fabric_used TEXT, roll_number TEXT, fabric_number TEXT, date_sent_lab TEXT,
-            bom_revision TEXT, m_chart_revision TEXT, care_label TEXT, cert_docs TEXT, inspec_report TEXT,
-            saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
 # --- OPÇÕES DE CORES DIRETAS PARA AS CAIXAS ---
 status_options = [
     "🟥 RED (NOT READY / EM FALTA)", 
@@ -60,7 +39,6 @@ with tab1:
     article_name_t1 = st.text_input("ARTICLE", value="Premium Cotton Fabric")
     cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"])
     
-    # ADD BOM movido para a Aba 1
     st.markdown("---")
     add_bom = st.checkbox("ADD BOM (Bill of Materials)")
 
@@ -136,30 +114,25 @@ with tab6:
     # 🗄️ BOTÃO 1: GUARDAR NA BASE DE DADOS
     with col_db:
         if st.button("💾 Save Progress to Database"):
-            conn = sqlite3.connect('checklist_database.db')
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO projects (
-                    project_name, folder_number, model_name, article_name_t1, cert_type, add_bom,
-                    material, doc_art_name, doc_art_num, oekotex, text_report, expiration_date,
-                    t_splag, t_confirmed, m_chart, m_check, saved_folder, label_status,
-                    s_inprogress, s_revision, s_confirmed, s_sent_oeti, s_excel, samples_made, date_made, samples_sent, date_sent,
-                    mockup_article, mockups_ready, fabric_used, roll_number, fabric_number, date_sent_lab,
-                    bom_revision, m_chart_revision, care_label, cert_docs, inspec_report
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            ''', (
-                project_name, folder_number, model_name, article_name_t1, cert_type, int(add_bom),
-                material, doc_art_name, doc_art_num, int(oekotex), int(text_report), str(expiration_date),
-                t_splag, t_confirmed, m_chart, m_check, saved_folder, label_status,
-                s_inprogress, s_revision, s_confirmed, s_sent_oeti, s_excel, samples_made, str(date_made), samples_sent, str(date_sent),
-                mockup_article, mockups_ready, fabric_used, roll_number, fabric_number, str(date_sent_lab),
-                bom_revision, m_chart_revision, care_label, cert_docs, inspec_report
-            ))
-            conn.commit()
-            conn.close()
-            st.success("🎉 All checklist items safely saved to the database!")
+            try:
+                conn = sqlite3.connect('checklist_database.db')
+                cursor = conn.cursor()
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS projects (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT, folder_number TEXT, material TEXT, saved_at TEXT
+                    )
+                ''')
+                cursor.execute('''
+                    INSERT INTO projects (project_name, folder_number, material, saved_at) 
+                    VALUES (?, ?, ?, ?)
+                ''', (project_name, folder_number, material, str(datetime.datetime.now())))
+                conn.commit()
+                conn.close()
+                st.success("🎉 All checklist items safely saved to the database!")
+            except Exception as db_err:
+                st.error(f"Database error: {db_err}")
 
-    # 📊 BOTÃO 2: GERAR DOCUMENTO DE RELATÓRIO (Formato Excel CSV de Texto)
+    # 📊 BOTÃO 2: GERAR DOCUMENTO EXCEL (CSV)
     with col_csv:
         csv_lines = [
             "CHECKLIST ITEM / FIELD;VALUE / STATUS SELECTED",
@@ -186,7 +159,6 @@ with tab6:
             f"CARE LABEL;{care_label}",
             f"CERTIFICATES ARCHIVE;{cert_docs}"
         ]
-        
         csv_data = "\n".join(csv_lines)
         
         st.download_button(
@@ -199,8 +171,32 @@ with tab6:
     # ================= 🔍 VISUALIZADOR DA BASE DE DADOS COM FILTRO =================
     st.markdown("---")
     st.subheader("🔍 Search & Filter Saved Checklists")
-    
     search_query = st.text_input("Search by Project Name, Folder Number, or Material Type:", value="")
     
-    conn = sqlite3.connect('checklist_database.db')
     try:
+        conn = sqlite3.connect('checklist_database.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT, folder_number TEXT, material TEXT, saved_at TEXT
+            )
+        ''')
+        cursor.execute("SELECT id, project_name, folder_number, material, saved_at FROM projects ORDER BY saved_at DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        if rows:
+            for item in rows:
+                p_id, p_name, f_num, mat, s_at = item
+                show_record = True
+                if search_query:
+                    q = search_query.lower()
+                    if q not in str(p_name).lower() and q not in str(f_num).lower() and q not in str(mat).lower():
+                        show_record = False
+                
+                if show_record:
+                    st.info(f"📁 Folder: {f_num} | Project: {p_name} | Material: {mat} | Saved at: {s_at}")
+        else:
+            st.info("No records found in database yet. Fill out the form and click Save above.")
+    except Exception as view_err:
+        st.error(f"Error loading database view: {view_err}")
