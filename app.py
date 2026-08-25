@@ -264,7 +264,7 @@ conn.close()
 
 
 #==========================================
-📑 3: #Sample Garment
+#📑 3: #Sample Garment
 #==========================================
 with tab3:
 st.header("3️⃣ 3: Sample Garment")
