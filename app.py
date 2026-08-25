@@ -1,11 +1,14 @@
 import streamlit as st
 import datetime
 import sqlite3
-import io
 
 # Configuração da Página
 st.set_page_config(page_title="Certification Checklist Program", layout="wide")
 st.title("📋 Certification Checklist Program")
+
+# Inicializar listas na sessão para permitir múltiplos materiais
+if 'materials_list' not in st.session_state:
+    st.session_state.materials_list = []
 
 # --- OPÇÕES DE CORES DIRETAS PARA AS CAIXAS ---
 status_options = [
@@ -26,8 +29,8 @@ def check_expiration(exp_date):
 
 # ================= 🧭 NAVEGAÇÃO POR ABAS =================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "1. Project Info", "2. Documents", "3. Technical Documentation", 
-    "4. Sample Garment", "5. Sample Mockups", "6. Finalisation & Database"
+    "1. Project Info", "2. Documents (Multi-Material)", "3. Technical Documentation", 
+    "4. Sample Garment", "5. Sample Mockups", "6. Preview & Finalisation"
 ])
 
 # ================= TAB 1: PROJECT INFO =================
@@ -41,24 +44,53 @@ with tab1:
     
     st.markdown("---")
     add_bom = st.checkbox("ADD BOM (Bill of Materials)")
+    # Caixa de observação para múltiplas BOMs
+    bom_notes = st.text_area("BOM NOTES / REVISIONS (e.g., BOM 1 for main fabric, BOM 2 for lining)", value="")
 
-# ================= TAB 2: DOCUMENTS =================
+# ================= TAB 2: DOCUMENTS (MÚLTIPLOS ITENS) =================
 with tab2:
     st.header("Materials & Document Expiration")
+    st.subheader("Add Material Item")
+    
     material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"])
-    doc_art_name = st.text_input("ARTICLE NAME (Doc)", value=article_name_t1)
+    doc_art_name = st.text_input("ARTICLE NAME (for this material)", value=article_name_t1)
     doc_art_num = st.text_input("ARTICLE NUMBER", value="ART-9922")
     
     col1, col2 = st.columns(2)
-    with col1: oekotex = st.checkbox("OEKO-TEX")
-    with col2: text_report = st.checkbox("TEXT REPORT")
+    with col1: oekotex = st.checkbox("OEKO-TEX Compliance")
+    with col2: text_report = st.checkbox("TEXT REPORT Attached")
     
-    st.markdown("---")
     expiration_date = st.date_input("EXPIRATION DATE", datetime.date.today() + datetime.timedelta(days=2))
     alert_msg, alert_type = check_expiration(expiration_date)
+    
     if alert_type == "error": st.error(alert_msg)
     elif alert_type == "warning": st.warning(alert_msg)
     else: st.success(alert_msg)
+    
+    # Botão para adicionar à lista em memória
+    if st.button("➕ Add Material to Project List"):
+        new_material = {
+            "type": material,
+            "name": doc_art_name,
+            "number": doc_art_num,
+            "oekotex": "YES" if oekotex else "NO",
+            "report": "YES" if text_report else "NO",
+            "expiry": str(expiration_date),
+            "status": alert_msg
+        }
+        st.session_state.materials_list.append(new_material)
+        st.success(f"Added {material} ({doc_art_num}) to the list below!")
+
+    st.markdown("---")
+    st.subheader("📋 Current Project Materials List")
+    if st.session_state.materials_list:
+        for idx, m in enumerate(st.session_state.materials_list):
+            st.text(f"[{idx+1}] {m['type']} - Art: {m['name']} ({m['number']}) | OEKO: {m['oekotex']} | Report: {m['report']} | Expires: {m['expiry']} ({m['status']})")
+        if st.button("🗑️ Clear Materials List"):
+            st.session_state.materials_list = []
+            st.rerun()
+    else:
+        st.info("No materials added yet. Fill the form above and click 'Add Material'.")
 
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
@@ -99,14 +131,65 @@ with tab5:
     fabric_number = st.text_input("FABRIC NUMBER")
     date_sent_lab = st.date_input("WHEN WAS IT SENT TO LABORATORY?")
 
-# ================= TAB 6: FINALISATION =================
+# ================= TAB 6: PREVIEW & FINALISATION =================
 with tab6:
-    st.header("Finalisation, Database & Report Export")
+    st.header("Live Preview, Database & Document Export")
     bom_revision = st.selectbox("BOM REVISION", status_options, index=0)
     m_chart_revision = st.selectbox("MEASUREMENT CHART REVISION", status_options, index=0)
     care_label = st.selectbox("CARE LABEL", status_options, index=0)
     cert_docs = st.selectbox("CERTIFICATES DOCS ARCHIVE", status_options, index=0)
     inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options, index=0)
+    
+    # --- SECÇÃO DE PRÉ-VISUALIZAÇÃO ANTES DE IMPRIMIR ---
+    st.markdown("---")
+    st.subheader("👀 Checklist Report Preview (Review before download)")
+    
+    preview_text = f"""
+    ==================================================
+    CERTIFICATION CHECKLIST LIVE PREVIEW
+    ==================================================
+    [TAB 1] PROJECT INFO
+    - Project Name: {project_name}
+    - Folder Number: {folder_number}
+    - Model Name: {model_name}
+    - Certification Type: {cert_type}
+    - BOM Attached: {"YES" if add_bom else "NO"}
+    - BOM Notes & Variations: {bom_notes if bom_notes else "None"}
+    
+    [TAB 2] ADDED MATERIALS
+    """
+    if st.session_state.materials_list:
+        for idx, m in enumerate(st.session_state.materials_list):
+            preview_text += f"\n    ({idx+1}) {m['type']} | Art: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})"
+    else:
+        preview_text += "\n    No material items added to this project."
+        
+    preview_text += f"""
+    
+    [TAB 3] TECHNICAL DOCUMENTATION STATUS
+    - SPLAG: {t_splag}
+    - Confirmed: {t_confirmed}
+    - Measurement Chart: {m_chart}
+    - Measurement Check: {m_check}
+    - Saved in Folder: {saved_folder}
+    - Label: {label_status}
+    
+    [TAB 4] SAMPLE GARMENT TRACKING
+    - In Progress: {s_inprogress} | Revision Kung: {s_revision}
+    - Confirmed: {s_confirmed} | Sent OETI: {s_sent_oeti}
+    - Samples Made Qty: {samples_made} on {date_made}
+    - Sent to OETI Qty: {samples_sent} on {date_sent}
+    
+    [TAB 5] SAMPLE MOCKUPS
+    - Mock-ups Status: {mockups_ready} | Article: {mockup_article}
+    - Fabric Used: {fabric_used} | Roll: {roll_number} | Fabric Num: {fabric_number}
+    
+    [TAB 6] FINALISATION
+    - BOM Revision: {bom_revision} | Chart Revision: {m_chart_revision}
+    - Care Label: {care_label} | Docs Archive: {cert_docs} | Inspection: {inspec_report}
+    ==================================================
+    """
+    st.code(preview_text, language="text")
     
     st.markdown("---")
     col_db, col_csv = st.columns(2)
@@ -122,81 +205,18 @@ with tab6:
                         id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT, folder_number TEXT, material TEXT, saved_at TEXT
                     )
                 ''')
+                # Salva o resumo de materiais principais na busca rápida
+                mat_summary = material if not st.session_state.materials_list else st.session_state.materials_list[0]['type']
                 cursor.execute('''
                     INSERT INTO projects (project_name, folder_number, material, saved_at) 
                     VALUES (?, ?, ?, ?)
-                ''', (project_name, folder_number, material, str(datetime.datetime.now())))
+                ''', (project_name, folder_number, mat_summary, str(datetime.datetime.now())))
                 conn.commit()
                 conn.close()
-                st.success("🎉 All checklist items safely saved to the database!")
+                st.success("🎉 Checklist data and material log successfully saved!")
             except Exception as db_err:
                 st.error(f"Database error: {db_err}")
 
-    # 📊 BOTÃO 2: GERAR DOCUMENTO EXCEL (CSV)
+    # 📊 BOTÃO 2: DESCARREGAR DOCUMENTO EXCEL (CSV)
     with col_csv:
-        csv_lines = [
-            "CHECKLIST ITEM / FIELD;VALUE / STATUS SELECTED",
-            f"Project Name;{project_name}",
-            f"Folder Number;{folder_number}",
-            f"Model Name;{model_name}",
-            f"Certification Type;{cert_type}",
-            f"BOM Added (Tab 1);{add_bom}",
-            f"Material Type;{material}",
-            f"Document Expiration;{expiration_date} ({alert_msg})",
-            f"OEKO-TEX Checklist;{oekotex}",
-            f"Text Report;{text_report}",
-            f"TECH DOC SPLAG;{t_splag}",
-            f"TECH DOC CONFIRMED;{t_confirmed}",
-            f"MEASUREMENT CHART;{m_chart}",
-            f"SAVED IN FOLDER;{saved_folder}",
-            f"LABEL STATUS;{label_status}",
-            f"SAMPLE IN PROGRESS;{s_inprogress}",
-            f"SAMPLE SENT TO OETI;{s_sent_oeti} (Qty: {samples_sent})",
-            f"SAMPLES MADE QTY;{samples_made}",
-            f"MOCK-UPS READY STATUS;{mockups_ready}",
-            f"BOM REVISION;{bom_revision}",
-            f"MEASUREMENT CHART REVISION;{m_chart_revision}",
-            f"CARE LABEL;{care_label}",
-            f"CERTIFICATES ARCHIVE;{cert_docs}"
-        ]
-        csv_data = "\n".join(csv_lines)
-        
         st.download_button(
-            label="📊 Download Complete Excel Document (CSV)",
-            data=csv_data,
-            file_name=f"Report_{folder_number}.csv",
-            mime="text/csv"
-        )
-
-    # ================= 🔍 VISUALIZADOR DA BASE DE DADOS COM FILTRO =================
-    st.markdown("---")
-    st.subheader("🔍 Search & Filter Saved Checklists")
-    search_query = st.text_input("Search by Project Name, Folder Number, or Material Type:", value="")
-    
-    try:
-        conn = sqlite3.connect('checklist_database.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS projects (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT, folder_number TEXT, material TEXT, saved_at TEXT
-            )
-        ''')
-        cursor.execute("SELECT id, project_name, folder_number, material, saved_at FROM projects ORDER BY saved_at DESC")
-        rows = cursor.fetchall()
-        conn.close()
-        
-        if rows:
-            for item in rows:
-                p_id, p_name, f_num, mat, s_at = item
-                show_record = True
-                if search_query:
-                    q = search_query.lower()
-                    if q not in str(p_name).lower() and q not in str(f_num).lower() and q not in str(mat).lower():
-                        show_record = False
-                
-                if show_record:
-                    st.info(f"📁 Folder: {f_num} | Project: {p_name} | Material: {mat} | Saved at: {s_at}")
-        else:
-            st.info("No records found in database yet. Fill out the form and click Save above.")
-    except Exception as view_err:
-        st.error(f"Error loading database view: {view_err}")
