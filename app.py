@@ -101,7 +101,7 @@ with tab3:
     saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0)
     label_status = st.selectbox("LABEL", status_options, index=0)
 
-# ================= TAB 4: SAMPLE GARMENT (MÚLTIPLOS ENVIOS COM APROVAÇÃO) =================
+# ================= TAB 4: SAMPLE GARMENT =================
 with tab4:
     st.header("Sample Garment Tracking")
     s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0)
@@ -164,11 +164,20 @@ with tab5:
     fabric_number = st.text_input("FABRIC NUMBER")
     date_sent_lab = st.date_input("WHEN WAS IT SENT TO LABORATORY?")
 
-# --- COMPILAÇÃO GLOBAL DE DADOS PARA USO NAS ABAS 6 E 7 ---
+# ================= TAB 7: CAMPOS DE FINALIZAÇÃO =================
+with tab7:
+    st.header("Finalisation & Database Management")
+    bom_revision = st.selectbox("BOM REVISION", status_options, index=0)
+    m_chart_revision = st.selectbox("MEASUREMENT CHART REVISION", status_options, index=0)
+    care_label = st.selectbox("CARE LABEL", status_options, index=0)
+    cert_docs = st.selectbox("CERTIFICATES DOCS ARCHIVE", status_options, index=0)
+    inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options, index=0)
+
+# --- CONSTRUÇÃO DO TEXTO DO RELATÓRIO ---
 lines = []
 lines.append("CERTIFICATION CHECKLIST REPORT\tVALUE / STATUS")
 lines.append("==================================================\t====================")
-lines.append("\n[TAB 1] PROJECT INFO\t")
+lines.append(f"\n[TAB 1] PROJECT INFO\t")
 lines.append(f"Project Name:\t{project_name}")
 lines.append(f"Folder Number:\t{folder_number}")
 lines.append(f"Model Name:\t{model_name}")
@@ -177,14 +186,14 @@ lines.append(f"Certification Type:\t{cert_type}")
 lines.append(f"BOM Attached:\t{'YES' if add_bom else 'NO'}")
 lines.append(f"BOM Notes & Variations:\t{bom_notes if bom_notes else 'None'}")
 
-lines.append("\n[TAB 2] ADDED MATERIALS\t")
+lines.append(f"\n[TAB 2] ADDED MATERIALS\t")
 if st.session_state.materials_list:
     for idx, m in enumerate(st.session_state.materials_list):
         lines.append(f"Material #{idx+1} ({m['type']}):\tArt: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})")
 else:
     lines.append("Materials List:\tNo material items added to this project.")
     
-lines.append("\n[TAB 3] TECHNICAL DOCUMENTATION STATUS\t")
+lines.append(f"\n[TAB 3] TECHNICAL DOCUMENTATION STATUS\t")
 lines.append(f"TECHNICAL DOCUMENTATION SPLAG:\t{t_splag}")
 lines.append(f"TECHNICAL DOCUMENTATION CONFIRMED:\t{t_confirmed}")
 lines.append(f"MEASUREMENT CHART:\t{m_chart}")
@@ -192,7 +201,7 @@ lines.append(f"MEASUREMENT CHECK OF SAMPLE:\t{m_check}")
 lines.append(f"SAVED IN FOLDER:\t{saved_folder}")
 lines.append(f"LABEL:\t{label_status}")
 
-lines.append("\n[TAB 4] SAMPLE GARMENT & APPROVAL\t")
+lines.append(f"\n[TAB 4] SAMPLE GARMENT & APPROVAL\t")
 lines.append(f"SAMPLE IN PROGRESS:\t{s_inprogress}")
 lines.append(f"SAMPLE REVISION AT KUNG:\t{s_revision}")
 lines.append(f"SAMPLE CONFIRMED:\t{s_confirmed}")
@@ -203,15 +212,3 @@ lines.append(f"Total Samples Made:\t{samples_made} on {date_made}")
 lines.append("OETI Shipment History Log:\t")
 if st.session_state.oeti_shipments:
     for idx, s in enumerate(st.session_state.oeti_shipments):
-        lines.append(f"-> Batch Shipment #{idx+1}:\t{s['qty']} sample(s) sent on {s['date']} | Status: {s['approval']}")
-else:
-    lines.append("-> Shipment History:\tNo batches registered yet.")
-    
-lines.append("\n[TAB 5] SAMPLE MOCKUPS\t")
-lines.append(f"ARTICLE OF MOCKUPS:\t{mockup_article}")
-lines.append(f"MOCK-UPS READY Status:\t{mockups_ready}")
-lines.append(f"FABRIC USED:\t{fabric_used}")
-lines.append(f"ROLL NUMBER:\t{roll_number}")
-lines.append(f"FABRIC NUMBER:\t{fabric_number}")
-lines.append(f"WHEN WAS IT SENT TO LABORATORY:\t{date_sent_lab}")
-
