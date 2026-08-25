@@ -201,5 +201,7 @@ with tab6:
         lines.append(f"Reason for Rejection:\t{rejection_reason if rejection_reason else 'Not specified'}")
     
     lines.append("OETI Shipment History Log:\t")
+    
     if st.session_state.oeti_shipments:
         for idx, s in enumerate(st.session_state.oeti_shipments):
+            lines.append(f"-> Batch Shipment #{idx+1}:\t{s['qty']} sample(s) sent on {s['date']}")
