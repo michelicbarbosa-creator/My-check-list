@@ -1,5 +1,6 @@
 import streamlit as st
 import datetime
+import sqlite3
 
 # Configuração Principal do Programa
 st.set_page_config(page_title="Certification Checklist", layout="wide")
@@ -11,11 +12,10 @@ if 'materials_list' not in st.session_state:
 if 'oeti_shipments' not in st.session_state:
     st.session_state.oeti_shipments = []
 
-# Status options limpas e com NO NEED
 status_options = [
-    "🟥 NO NEED/ NOT READY", 
-    "🟨 IN PROGRESS", 
-    "🟩 OK / TERMINADO"
+    "🟥 NO NEED", 
+    "🟨 IN PROGRESS / EM PROCESSO", 
+    "🟩 GREEN / OK / TERMINADO"
 ]
 
 def check_expiration(exp_date):
@@ -27,7 +27,7 @@ def check_expiration(exp_date):
     else:
         return "🟩 Valid Document", "success"
 
-# --- ESTRUTURA DAS 6 ABAS DIRETAS ---
+# --- ESTRUTURA DAS 6 ABAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Project Info", "2. Documents (Multi-Material)", "3. Technical Documentation", 
     "4. Sample Garment (Multi-Shipment)", "5. Sample Mockups", "6. Preview & Download"
@@ -161,14 +161,11 @@ with tab6:
     inspec_report = st.selectbox("INSPECTION REPORT SAVED IN FOLDER", status_options, index=0)
     
     st.markdown("---")
-    st.subheader("👀 Checklist Report Preview (Review before download)")
     
-    # Geração do arquivo com formatação de tabulação separada por abas (Excel nativo)
+    # Montagem da estrutura de linhas para exibição e download (Excel Tabulado)
     lines = []
     lines.append("CERTIFICATION CHECKLIST REPORT\tVALUE / STATUS")
     lines.append("==================================================\t====================")
-    
-    # Bloco da Aba 1
     lines.append("\n[TAB 1] PROJECT INFO\t")
     lines.append(f"Project Name:\t{project_name}")
     lines.append(f"Folder Number:\t{folder_number}")
@@ -178,7 +175,6 @@ with tab6:
     lines.append(f"BOM Attached:\t{'YES' if add_bom else 'NO'}")
     lines.append(f"BOM Notes & Variations:\t{bom_notes if bom_notes else 'None'}")
     
-    # Bloco da Aba 2 (Com espaçamento livre antes e depois)
     lines.append("\n[TAB 2] ADDED MATERIALS\t")
     if st.session_state.materials_list:
         for idx, m in enumerate(st.session_state.materials_list):
@@ -186,7 +182,6 @@ with tab6:
     else:
         lines.append("Materials List:\tNo material items added to this project.")
         
-    # Bloco da Aba 3
     lines.append("\n[TAB 3] TECHNICAL DOCUMENTATION STATUS\t")
     lines.append(f"TECHNICAL DOCUMENTATION SPLAG:\t{t_splag}")
     lines.append(f"TECHNICAL DOCUMENTATION CONFIRMED:\t{t_confirmed}")
@@ -195,7 +190,6 @@ with tab6:
     lines.append(f"SAVED IN FOLDER:\t{saved_folder}")
     lines.append(f"LABEL:\t{label_status}")
     
-    # Bloco da Aba 4
     lines.append("\n[TAB 4] SAMPLE GARMENT & APPROVAL\t")
     lines.append(f"SAMPLE IN PROGRESS:\t{s_inprogress}")
     lines.append(f"SAMPLE REVISION AT KUNG:\t{s_revision}")
@@ -204,3 +198,8 @@ with tab6:
     lines.append(f"SAMPLE ENTERED IN EXCEL FILE:\t{s_excel}")
     lines.append(f"Total Samples Made:\t{samples_made} on {date_made}")
     lines.append(f"OETI Approval Status:\t{approval_status}")
+    if approval_status == "🟥 NOT APPROVED":
+        lines.append(f"Reason for Rejection:\t{rejection_reason if rejection_reason else 'Not specified'}")
+    
+    lines.append("OETI Shipment History Log:\t")
+    if st.session_state.oeti_shipments:
