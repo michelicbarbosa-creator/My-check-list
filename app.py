@@ -187,9 +187,10 @@ lines.append(f"BOM Attached:\t{'YES' if add_bom else 'NO'}")
 lines.append(f"BOM Notes & Variations:\t{bom_notes if bom_notes else 'None'}")
 
 lines.append(f"\n[TAB 2] ADDED MATERIALS\t")
-if st.session_state.materials_list:
-    for idx, m in enumerate(st.session_state.materials_list):
-        lines.append(f"Material #{idx+1} ({m['type']}):\tArt: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})")
+    if st.session_state.materials_list:
+        for idx, m in enumerate(st.session_state.materials_list):
+            lines.append(f"Material #{idx+1} ({m['type']}):\tArt: {m['name']} | Num: {m['number']} | Expiry: {m['expiry']} ({m['status']})")
+
 else:
     lines.append("Materials List:\tNo material items added to this project.")
     
@@ -210,5 +211,7 @@ lines.append(f"SAMPLE ENTERED IN EXCEL FILE:\t{s_excel}")
 lines.append(f"Total Samples Made:\t{samples_made} on {date_made}")
 
 lines.append("OETI Shipment History Log:\t")
-if st.session_state.oeti_shipments:
-    for idx, s in enumerate(st.session_state.oeti_shipments):
+    if st.session_state.oeti_shipments:
+        for idx, s in enumerate(st.session_state.oeti_shipments):
+        lines.append(f"-> Batch Shipment #{idx+1}:\t{s['qty']} sample(s) sent on {s['date']} | Status: {s['approval']}")
+
