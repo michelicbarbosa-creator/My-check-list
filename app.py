@@ -162,7 +162,6 @@ with tab6:
     
     st.markdown("---")
     
-    # Montagem da estrutura de linhas para exibição e download (Excel Tabulado)
     lines = []
     lines.append("CERTIFICATION CHECKLIST REPORT\tVALUE / STATUS")
     lines.append("==================================================\t====================")
@@ -203,3 +202,4 @@ with tab6:
     
     lines.append("OETI Shipment History Log:\t")
     if st.session_state.oeti_shipments:
+        for idx, s in enumerate(st.session_state.oeti_shipments):
