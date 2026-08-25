@@ -174,7 +174,7 @@ with tab6:
             story.append(Paragraph("<b>CERTIFICATION CHECKLIST FINAL REPORT</b>", title_style))
             story.append(Spacer(1, 15))
             
-            all_items_data = [
+                        all_items_data = [
                 [Paragraph("<b>CHECKLIST ITEM / FIELD</b>", body_style), Paragraph("<b>VALUE / STATUS SELECTED</b>", body_style)],
                 [Paragraph("<b>[TAB 1] Project Name</b>", body_style), Paragraph(project_name, body_style)],
                 [Paragraph("<b>[TAB 1] Folder Number</b>", body_style), Paragraph(folder_number, body_style)],
@@ -182,3 +182,20 @@ with tab6:
                 [Paragraph("<b>[TAB 1] Certification Type</b>", body_style), Paragraph(cert_type, body_style)],
                 [Paragraph("<b>[TAB 2] Material Type</b>", body_style), Paragraph(material, body_style)],
                 [Paragraph("<b>[TAB 2] Document Expiration</b>", body_style), Paragraph(f"{expiration_date} ({alert_msg})", body_style)],
+                [Paragraph("<b>[TAB 2] OEKO-TEX / TEXT REPORT</b>", body_style), Paragraph(f"OEKO: {oekotex} | Report: {text_report} | BOM: {add_bom}", body_style)],
+                [Paragraph("<b>[TAB 3] TECH DOCUMENTATION SPLAG</b>", body_style), Paragraph(t_splag, body_style)],
+                [Paragraph("<b>[TAB 3] TECH DOCUMENTATION CONFIRMED</b>", body_style), Paragraph(t_confirmed, body_style)],
+                [Paragraph("<b>[TAB 3] MEASUREMENT CHART</b>", body_style), Paragraph(m_chart, body_style)],
+                [Paragraph("<b>[TAB 3] SAVED IN FOLDER / LABEL</b>", body_style), Paragraph(f"Folder: {saved_folder} | Label: {label_status}", body_style)],
+                [Paragraph("<b>[TAB 4] SAMPLE IN PROGRESS</b>", body_style), Paragraph(s_inprogress, body_style)],
+                [Paragraph("<b>[TAB 4] SAMPLE SENT TO OETI</b>", body_style), Paragraph(f"{s_sent_oeti} (Qty: {samples_sent} on {date_sent})", body_style)],
+                [Paragraph("<b>[TAB 5] MOCK-UPS READY STATUS</b>", body_style), Paragraph(mockups_ready, body_style)],
+                [Paragraph("<b>[TAB 5] Fabric / Roll / Fabric No.</b>", body_style), Paragraph(f"{fabric_used} / {roll_number} / {fabric_number}", body_style)],
+                [Paragraph("<b>[TAB 6] BOM REVISION</b>", body_style), Paragraph(bom_revision, body_style)],
+                [Paragraph("<b>[TAB 6] MEASUREMENT CHART REVISION</b>", body_style), Paragraph(m_chart_revision, body_style)],
+                [Paragraph("<b>[TAB 6] CARE LABEL</b>", body_style), Paragraph(care_label, body_style)],
+                [Paragraph("<b>[TAB 6] CERTIFICATES DOCS ARCHIVE</b>", body_style), Paragraph(cert_docs, body_style)],
+                [Paragraph("<b>[TAB 6] INSPECTION REPORT</b>", body_style), Paragraph(inspec_report, body_style)]
+            ]
+            
+            table = Table(all_items_data, colWidths=[250, 250])
