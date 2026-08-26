@@ -14,8 +14,8 @@ if 'oeti_shipments' not in st.session_state:
 
 status_options = [
     "🟥 NO NEED", 
-    "🟨 IN PROGRESS / EM PROCESSO", 
-    "🟩 GREEN / OK / TERMINADO"
+    "🟨 IN PROGRESS ", 
+    "🟩 GREEN / OK "
 ]
 
 def check_expiration(exp_date):
