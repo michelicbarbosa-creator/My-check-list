@@ -19,8 +19,8 @@ if 'mockups_v2_history' not in st.session_state:
 
 status_options = [
     "NO NEED", 
-    "IN PROGRESS / EM PROCESSO", 
-    "GREEN / OK / TERMINADO"
+    "IN PROGRESS ", 
+    "GREEN / OK "
 ]
 
 # CRIAÇÃO DOS VALORES PADRÃO DA SESSÃO
@@ -46,8 +46,8 @@ def check_expiration(exp_date):
 
 # --- ESTRUTURA DAS 6 ABAS NA TELA ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "1. Project Info", "2. Documents (Multi-Material)", "3. Technical Documentation", 
-    "4. Sample Garment (3-Sections Log)", "5. Sample Mockups (Dynamic History)", "6. Preview & Finalisation"
+    "1. Project Info", "2. Documents ", "3. Technical Documentation", 
+    "4. Sample Garment ", "5. Sample Mockups ", "6. Preview & Finalisation"
 ])
 
 # ================= TAB 1: PROJECT INFO =================
@@ -97,7 +97,7 @@ with tab2:
         st.success("Material added successfully!")
 
     st.markdown("---")
-    st.subheader("📋 Current Project Materials List")
+    st.subheader("📋  Project Materials List")
     if st.session_state.materials_list:
         st.dataframe(st.session_state.materials_list, use_container_width=True)
         if st.button("🗑️ Clear Materials List", key="t2_clear_btn"):
@@ -116,7 +116,7 @@ with tab3:
 
 # ================= TAB 4: SAMPLE GARMENT =================
 with tab4:
-    st.header("Sample Garment & Institute Shipment Tracking")
+    st.header("Sample Garment ")
     st.subheader("⚙️ General Checklist Status")
     col_s1, col_s2, col_s3 = st.columns(3)
     with col_s1:
@@ -132,7 +132,7 @@ with tab4:
     col_sizes, col_ship = st.columns(2)
     
     with col_sizes:
-        st.subheader("📦 Production Size Log (Size)")
+        st.subheader("📦 Production ")
         input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="ORD-2026", key="t4_sz_ord")
         input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
         input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
@@ -142,7 +142,7 @@ with tab4:
             st.success("Size log entry recorded!")
 
     with col_ship:
-        st.subheader("🚚 Institute Shipment Log")
+        st.subheader("🚚 Institute Shipment ")
         ship_order = st.text_input("ORDER NUMBER", value="ORD-2026", key="t4_sh_ord")
         ship_qty = st.number_input("QUANTITY SENT", min_value=1, value=1, key="t4_sh_qty")
         ship_size = st.text_input("SIZE", value="L", key="t4_sh_sz")
