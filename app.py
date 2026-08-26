@@ -23,7 +23,7 @@ status_options = [
     "GREEN / OK / TERMINADO"
 ]
 
-# CRIAÇÃO DOS VALORES PADRÃO DA SESSÃO
+# CRIAÇÃO DOS VALORES PADRÃO DA SESSÃO (Garante que nenhuma variável dê erro de leitura na Aba 5)
 if 'project_name' not in st.session_state: st.session_state.project_name = "Project Alpha"
 if 'folder_number' not in st.session_state: st.session_state.folder_number = "F-2026-001"
 if 'model_name' not in st.session_state: st.session_state.model_name = "Standard V1"
@@ -35,7 +35,15 @@ if 'inst_hohenstein' not in st.session_state: st.session_state.inst_hohenstein =
 if 'add_bom' not in st.session_state: st.session_state.add_bom = False
 if 'bom_notes' not in st.session_state: st.session_state.bom_notes = ""
 
-# Variáveis padrão de status técnico
+# Definição de segurança das variáveis globais da Aba 5 para evitar tela preta
+mockup_article = "Standard Mockup Art"
+fabric_used = "Standard Fabric"
+fabric_number = "FAB-001"
+roll_number = "ROLL-001"
+date_finished = datetime.date.today()
+date_sent_inst = datetime.date.today()
+
+# Variáveis padrão de status técnico das outras abas
 t_splag, t_confirmed, m_chart, m_check, saved_folder, label_status = status_options, status_options, status_options, status_options, status_options, status_options
 s_inprogress, s_revision, s_confirmed, s_sent_oeti, s_excel = status_options, status_options, status_options, status_options, status_options
 bom_revision, m_chart_revision, care_label, cert_docs, inspec_report = status_options, status_options, status_options, status_options, status_options
@@ -185,13 +193,5 @@ with tab4:
             st.session_state.institute_shipments = []
             st.rerun()
 
-# ================= TAB 5: SAMPLE MOCKUPS (TOTALMENTE FORMULADA E DINÂMICA) =================
+# ================= TAB 5: SAMPLE MOCKUPS (TOTALMENTE INDEPENDENTE) =================
 with tab5:
-    st.header("Sample Mockups Configuration & Tracking")
-    
-    col_mock1, col_mock2 = st.columns(2)
-    
-    with col_mock1:
-        st.subheader("📝 Mockup Data Details")
-        mockup_article = st.text_input("ARTICLE OF MOCKUPS", value="Mock-UX Fabric")
-        mock_order_num = st.text_input("ORDER NUMBER", value="ORD-2026", key="mk_ord")
