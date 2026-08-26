@@ -111,7 +111,7 @@ with tab4:
     s_excel = st.selectbox("SAMPLE ENTERED IN 'OVERVIEW OF REQUIRED SAMPLE (EXCEL FILE)'", status_options, index=0)
     
     st.markdown("---")
-    st.subheader("Production & OETI")
+    st.subheader("Production OETI")
     col_made, col_log = st.columns(2)
     
     with col_made:
