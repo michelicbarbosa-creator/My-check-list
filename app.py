@@ -156,7 +156,7 @@ with tab4:
 with tab5:
     st.header("Sample Mockups Details")
     mockup_article = st.text_input("ARTICLE OF MOCKUPS", value="Mock-UX Fabric")
-    mockups_ready = st.selectbox("MOCK-UPS READY Status", status_options, index=0)
+    mockups_ready = st.selectbox("MOCK-UPS Status", status_options, index=0)
     
     st.subheader("Fabric Information")
     fabric_used = st.text_input("FABRIC USED")
