@@ -7,7 +7,7 @@ import json
 st.set_page_config(page_title="Certification Checklist", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL (Garante estabilidade ao mudar de aba)
+# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL (Garante estabilidade ao trocar de aba)
 if 'materials_list' not in st.session_state:
     st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state:
@@ -185,7 +185,7 @@ with tab4:
             st.session_state.institute_shipments = []
             st.rerun()
 
-# ================= TAB 5: SAMPLE MOCKUPS (REESTRUTURADA E ALINHADA) =================
+# ================= TAB 5: SAMPLE MOCKUPS (COM TODOS OS CAMPOS ABERTO NO HISTÓRICO) =================
 with tab5:
     st.header("Sample Mockups Configuration & Tracking")
     
