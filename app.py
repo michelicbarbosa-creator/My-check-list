@@ -7,7 +7,7 @@ import json
 st.set_page_config(page_title="Certification Checklist", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL (Garante estabilidade ao trocar de aba)
+# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL
 if 'materials_list' not in st.session_state:
     st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state:
@@ -100,7 +100,7 @@ with tab2:
             "oekotex": "YES" if oekotex else "NO", "report": "YES" if text_report else "NO",
             "expiry": str(expiration_date), "status": alert_msg
         })
-        st.success(f"Added {material} successfully!")
+        st.success("Material added successfully!")
 
     st.markdown("---")
     st.subheader("📋 Current Project Materials List")
@@ -185,7 +185,7 @@ with tab4:
             st.session_state.institute_shipments = []
             st.rerun()
 
-# ================= TAB 5: SAMPLE MOCKUPS (COM TODOS OS CAMPOS ABERTO NO HISTÓRICO) =================
+# ================= TAB 5: SAMPLE MOCKUPS (VISUALIZADOR VERTICAL SEGURO PARA TELEMÓVEL) =================
 with tab5:
     st.header("Sample Mockups Configuration & Tracking")
     
