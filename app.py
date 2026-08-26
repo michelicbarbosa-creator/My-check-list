@@ -7,7 +7,7 @@ import json
 st.set_page_config(page_title="Certification Checklist", layout="wide")
 st.title("📋 Certification Checklist Program")
 
-# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL
+# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL (Garante estabilidade ao mudar de aba)
 if 'materials_list' not in st.session_state:
     st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state:
@@ -185,14 +185,13 @@ with tab4:
             st.session_state.institute_shipments = []
             st.rerun()
 
-# ================= TAB 5: SAMPLE MOCKUPS (ALINHAMENTO TÉCNICO CORRIGIDO) =================
+# ================= TAB 5: SAMPLE MOCKUPS (REESTRUTURADA E ALINHADA) =================
 with tab5:
     st.header("Sample Mockups Configuration & Tracking")
     
     col_mock1, col_mock2 = st.columns(2)
     
     with col_mock1:
-        st.subheader("📝 Mockup Data Details")
+        st.subheader("📝 Mockup Production Details")
         mockup_article = st.text_input("ARTICLE OF MOCKUPS", value="Mock-UX Fabric")
         mock_order_num = st.text_input("ORDER NUMBER", value="ORD-2026", key="mk_ord")
-        fabric_used = st.text_input("FABRIC USED", value="Cotton Blend 230g")
