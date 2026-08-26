@@ -154,7 +154,7 @@ with tab4:
             st.success("Shipment registered successfully!")
 
     st.markdown("---")
-    st.subheader("📋 Independent Size History")
+    st.subheader("📋 Production History")
     if st.session_state.sizes_history:
         st.dataframe(st.session_state.sizes_history, use_container_width=True)
         if st.button("🗑️ Clear Size History", key="t4_clear_sz"):
