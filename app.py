@@ -162,7 +162,7 @@ with tab5:
     fabric_used = st.text_input("FABRIC USED")
     roll_number = st.text_input("ROLL NUMBER")
     fabric_number = st.text_input("FABRIC NUMBER")
-    date_sent_lab = st.date_input("WHEN WAS IT SENT TO LABORATORY?")
+    date_sent_lab = st.date_input("WHEN WAS IT SENT TO Institute?")
 
 # --- COMPILAÇÃO GLOBAL DE DADOS PARA USO NAS ABAS 6 E 7 ---
 lines = []
