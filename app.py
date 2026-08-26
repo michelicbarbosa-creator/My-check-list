@@ -103,7 +103,7 @@ with tab3:
 
 # ================= TAB 4: SAMPLE GARMENT (MÚLTIPLOS ENVIOS COM APROVAÇÃO) =================
 with tab4:
-    st.header("Sample Garment Tracking")
+    st.header(" Check List Sample Garment Tracking")
     s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0)
     s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=0)
     s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=0)
