@@ -35,11 +35,11 @@ if 'mockups_v2_history' not in st.session_state: st.session_state.mockups_v2_his
 status_options = ["NO ", "IN PROGRESS ", "OK "]
 
 # VALORES PADRÃO DA SESSÃO
-if 'project_name' not in st.session_state: st.session_state.project_name = "Project Alpha"
-if 'folder_number' not in st.session_state: st.session_state.folder_number = "F-2026-001"
-if 'model_name' not in st.session_state: st.session_state.model_name = "Standard V1"
-if 'article_name_t1' not in st.session_state: st.session_state.article_name_t1 = "Premium Cotton Fabric"
-if 'cert_type' not in st.session_state: st.session_state.cert_type = "NEW CERTIFICATION"
+if 'project_name' not in st.session_state: st.session_state.project_name = " "
+if 'folder_number' not in st.session_state: st.session_state.folder_number = " "
+if 'model_name' not in st.session_state: st.session_state.model_name = " "
+if 'article_name_t1' not in st.session_state: st.session_state.article_name_t1 = " "
+if 'cert_type' not in st.session_state: st.session_state.cert_type = " "
 
 def check_expiration(exp_date):
     today = datetime.date.today()
@@ -156,13 +156,13 @@ with tab4:
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
         input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
-        input_parti_fabric = st.text_input("PARTI FABRIC", value="", key="t4_parti_fab")
+        input_parti_fabric = st.text_input("Lot. FABRIC", value="", key="t4_parti_fab")
         input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key="t4_num_roll_ref")
 
         if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
             st.session_state.sizes_history.append({
                 "Order Number": input_order_num, "Qty": input_size_qty, "Size": input_size, "Date": str(input_size_date),
-                "Number Roll Fabric": input_num_roll_fabric, "Lot. Fabric": input_parti_fabric, "Number Roll Reflex": input_num_roll_reflex
+                "Number Roll Fabric": input_num_roll_fabric, "Lot. Fabric": input_lot_fabric, "Number Roll Reflex": input_num_roll_reflex
             })
             st.success("Size log entry recorded!")
             
