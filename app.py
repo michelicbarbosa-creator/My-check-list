@@ -228,8 +228,7 @@ with tab5:
 with tab6:
     st.header("Project Overview & Final Summary")
     
-    # --- ESTILIZAÇÃO CSS DE ALTA PRECISÃO PARA IMPRESSÃO ---
-    # Força o navegador a quebrar as colunas em linhas e expandir as tabelas para evitar sobreposição
+    # --- ESTILIZAÇÃO CSS AVANÇADA E CORRIGIDA PARA IMPRESSÃO ---
     st.markdown(
         """
         <style>
@@ -238,29 +237,40 @@ with tab6:
             iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"] {
                 display: none !important;
             }
-            /* Remove margens excessivas da página */
+            /* Configuração da página e margens para evitar cortes */
+            @page {
+                size: A4 landscape; /* Força o papel a ficar na horizontal de forma automática */
+                margin: 1.5cm;
+            }
             .main .block-container {
-                padding-top: 1cm !important;
-                padding-bottom: 1cm !important;
+                padding-top: 0cm !important;
+                padding-bottom: 0cm !important;
                 max-width: 100% !important;
             }
-            /* Força as colunas paralelas do monitor a ficarem uma por baixo da outra no papel */
+            /* CORREÇÃO DA SOBREPOSIÇÃO: Força os blocos a quebrarem em linhas independentes com espaço livre */
             [data-testid="stHorizontalBlock"] {
-                flex-direction: column !important;
+                display: block !important;
+                float: none !important;
+                width: 100% !important;
             }
             [data-testid="column"] {
+                display: block !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                float: none !important;
                 padding: 0 !important;
-                margin-bottom: 20px !important;
+                margin-bottom: 35px !important; /* Espaço de segurança para não encavalar o título seguinte */
+                page-break-inside: avoid;
             }
-            /* Garante que as tabelas ocupam toda a largura útil sem cortar texto */
+            /* Alinhamento perfeito das tabelas */
             .stDataFrame, table {
                 width: 100% !important;
-                page-break-inside: avoid;
+                margin-top: 5px !important;
+                margin-bottom: 15px !important;
             }
             h1, h2, h3 {
                 color: #1E3A8A !important;
+                margin-top: 20px !important;
                 page-break-after: avoid;
             }
         }
@@ -283,7 +293,7 @@ with tab6:
     
     st.markdown("---")
     
-    # Mantém o visual em duas colunas no monitor, mas o CSS acima corrige para uma coluna na impressão
+    # No ecrã mantém-se em duas colunas, mas o CSS corrigido acima organiza em lista limpa na impressão
     col_summary1, col_summary2 = st.columns(2)
     
     with col_summary1:
