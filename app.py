@@ -33,13 +33,12 @@ def delete_project_from_db(project_id):
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(projects, f, indent=4, ensure_ascii=False)
 
-# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL TOTALMENTE EM BRANCO
+# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL
 if 'materials_list' not in st.session_state: st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state: st.session_state.sizes_history = []
 if 'institute_shipments' not in st.session_state: st.session_state.institute_shipments = []
 if 'mockups_v2_history' not in st.session_state: st.session_state.mockups_v2_history = []
 
-# Inicialização limpa e vazia de todas as caixas visuais
 if 't1_p_name' not in st.session_state: st.session_state['t1_p_name'] = ""
 if 't1_f_num' not in st.session_state: st.session_state['t1_f_num'] = ""
 if 't1_m_name' not in st.session_state: st.session_state['t1_m_name'] = ""
@@ -54,7 +53,7 @@ def check_expiration(exp_date):
     elif (exp_date - today).days == 1: return "🟨 WARNING: Expires Tomorrow!", "warning"
     else: return "🟩 Valid Document", "success"
 
-# --- PAINEL DE PESQUISA NA NUVEM (Histórico) ---
+# --- PAINEL DE PESQUISA NA NUVEM (Histórico Avançado) ---
 st.sidebar.header("🔍 Search & Load Project")
 all_saved_projects = load_all_projects()
 if all_saved_projects:
@@ -67,11 +66,14 @@ if all_saved_projects:
         with col_side1:
             if st.button("📂 Load Project"):
                 p_data = all_saved_projects[selected_proj]
+                
+                # Restaurar Tabelas das Abas 2, 4 e 5
                 st.session_state.materials_list = p_data.get("materials", [])
                 st.session_state.sizes_history = p_data.get("production_sizes_and_rolls", [])
                 st.session_state.institute_shipments = p_data.get("shipments", [])
                 st.session_state.mockups_v2_history = p_data.get("mockups", [])
                 
+                # Restaurar Aba 1
                 info = p_data.get("project_info", {})
                 st.session_state['t1_p_name'] = info.get("name", "")
                 st.session_state['t1_f_num'] = info.get("folder", "")
@@ -79,11 +81,27 @@ if all_saved_projects:
                 st.session_state['t1_art'] = info.get("article_name_t1", "")
                 st.session_state['t1_cert'] = info.get("certification_type", "NEW CERTIFICATION")
                 st.session_state['t1_bom_notes'] = info.get("bom_notes", "")
-                
                 st.session_state['t1_oeti'] = "OETI" in info.get("institutes", [])
                 st.session_state['t1_testex'] = "TESTEX" in info.get("institutes", [])
                 st.session_state['t1_hoh'] = "HOHENSTEIN" in info.get("institutes", [])
                 st.session_state['t1_add_bom'] = info.get("add_bom", False)
+                
+                # CORREÇÃO: Restaurar Aba 3 (Technical Documentation)
+                tech = p_data.get("technical_documentation", {})
+                st.session_state['t3_splag'] = tech.get("splag", "NO ")
+                st.session_state['t3_conf'] = tech.get("confirmed", "NO ")
+                st.session_state['t3_chart'] = tech.get("measurement_chart", "NO ")
+                st.session_state['t3_check'] = tech.get("measurement_check", "NO ")
+                st.session_state['t3_folder'] = tech.get("saved_folder", "NO ")
+                st.session_state['t3_label'] = tech.get("label_status", "NO ")
+                
+                # CORREÇÃO: Restaurar Status Gerais da Aba 4
+                garment = p_data.get("sample_garment_status", {})
+                st.session_state['t4_in_prog'] = garment.get("inprogress", "NO ")
+                st.session_state['t4_rev'] = garment.get("revision", "NO ")
+                st.session_state['t4_conf'] = garment.get("confirmed", "NO ")
+                st.session_state['t4_sent'] = garment.get("sent_oeti", "NO ")
+                st.session_state['t4_excel'] = garment.get("entered_excel", "NO ")
                 
                 st.success(f"Loaded: {selected_proj}")
                 st.rerun()
@@ -97,26 +115,8 @@ else:
     st.sidebar.info("No projects saved in cloud database yet.")
 
 if st.sidebar.button("➕ Start New Project Blank"):
-    st.session_state.materials_list = []
-    st.session_state.sizes_history = []
-    st.session_state.institute_shipments = []
-    st.session_state.mockups_v2_history = []
-    st.session_state['t1_p_name'] = ""
-    st.session_state['t1_f_num'] = ""
-    st.session_state['t1_m_name'] = ""
-    st.session_state['t1_art'] = ""
-    st.session_state['t1_bom_notes'] = ""
-    
-    if 't1_p_name_input' in st.session_state: st.session_state['t1_p_name_input'] = ""
-    if 't1_f_num_input' in st.session_state: st.session_state['t1_f_num_input'] = ""
-    if 't1_m_name_input' in st.session_state: st.session_state['t1_m_name_input'] = ""
-    if 't1_art_input' in st.session_state: st.session_state['t1_art_input'] = ""
-    if 't1_bom_notes_input' in st.session_state: st.session_state['t1_bom_notes_input'] = ""
-    
-    st.session_state['t1_oeti'] = False
-    st.session_state['t1_testex'] = False
-    st.session_state['t1_hoh'] = False
-    st.session_state['t1_add_bom'] = False
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
     st.rerun()
 
 # --- ESTRUTURA DAS 6 ABAS ---
@@ -128,27 +128,34 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 with tab1:
     st.header("Project Identification")
     
-    project_name = st.text_input("PROJECT NAME", value=st.session_state['t1_p_name'], key="t1_p_name_input")
-    folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value=st.session_state['t1_f_num'], key="t1_f_num_input")
-    model_name = st.text_input("MODEL", value=st.session_state['t1_m_name'], key="t1_m_name_input")
-    article_name_t1 = st.text_input("ARTICLE", value=st.session_state['t1_art'], key="t1_art_input")
+    project_name = st.text_input("PROJECT NAME", value=st.session_state.get('t1_p_name', ''), key="t1_p_name_input")
+    folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value=st.session_state.get('t1_f_num', ''), key="t1_f_num_input")
+    model_name = st.text_input("MODEL", value=st.session_state.get('t1_m_name', ''), key="t1_m_name_input")
+    article_name_t1 = st.text_input("ARTICLE", value=st.session_state.get('t1_art', ''), key="t1_art_input")
     
     st.session_state['t1_p_name'] = project_name
     st.session_state['t1_f_num'] = folder_number
     st.session_state['t1_m_name'] = model_name
     st.session_state['t1_art'] = article_name_t1
     
-    cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"], key="t1_cert")
+    cert_idx = ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"].index(st.session_state.get('t1_cert', "NEW CERTIFICATION")) if st.session_state.get('t1_cert', "NEW CERTIFICATION") in ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"] else 0
+    cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"], index=cert_idx, key="t1_cert_input")
+    st.session_state['t1_cert'] = cert_type
     
     st.markdown("---")
     st.subheader("🏛️ TARGET CERTIFICATION INSTITUTE")
-    inst_oeti = st.checkbox("OETI", key="t1_oeti")
-    inst_testex = st.checkbox("TESTEX", key="t1_testex")
-    inst_hohenstein = st.checkbox("HOHENSTEIN", key="t1_hoh")
+    inst_oeti = st.checkbox("OETI", value=st.session_state.get('t1_oeti', False), key="t1_oeti_input")
+    inst_testex = st.checkbox("TESTEX", value=st.session_state.get('t1_testex', False), key="t1_testex_input")
+    inst_hohenstein = st.checkbox("HOHENSTEIN", value=st.session_state.get('t1_hoh', False), key="t1_hoh_input")
+    
+    st.session_state['t1_oeti'] = inst_oeti
+    st.session_state['t1_testex'] = inst_testex
+    st.session_state['t1_hoh'] = inst_hohenstein
     
     st.markdown("---")
-    add_bom = st.checkbox("ADD BOM (Bill of Materials)", key="t1_add_bom")
-    bom_notes = st.text_area("BOM NOTES / REVISIONS", value=st.session_state['t1_bom_notes'], key="t1_bom_notes_input")
+    add_bom = st.checkbox("ADD BOM (Bill of Materials)", value=st.session_state.get('t1_add_bom', False), key="t1_add_bom_input")
+    st.session_state['t1_add_bom'] = add_bom
+    bom_notes = st.text_area("BOM NOTES / REVISIONS", value=st.session_state.get('t1_bom_notes', ''), key="t1_bom_notes_input")
     st.session_state['t1_bom_notes'] = bom_notes
 # ================= TAB 2: DOCUMENTS =================
 with tab2:
@@ -181,18 +188,29 @@ with tab2:
 
     st.markdown("---")
     st.subheader("📋  Project Materials List")
-    if st.session_state.materials_list:
-        edited_materials = st.data_editor(st.session_state.materials_list, use_container_width=True, num_rows="dynamic", key="editable_materials_table")
-        st.session_state.materials_list = edited_materials
+    edited_materials = st.data_editor(st.session_state.materials_list, use_container_width=True, num_rows="dynamic", key="editable_materials_table")
+    st.session_state.materials_list = edited_materials
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
     st.header("Technical Documentation Status")
-    t_splag = st.selectbox("TECHNICAL DOCUMENTATION SPLAG", status_options, index=0, key="t3_splag")
-    t_confirmed = st.selectbox("TECHNICAL DOCUMENTATION CONFIRMED", status_options, index=0, key="t3_conf")
-    m_chart = st.selectbox("MEASUREMENT CHART", status_options, index=0, key="t3_chart")
-    m_check = st.selectbox("MEASUREMENT CHECK OF SAMPLE", status_options, index=0, key="t3_check")
-    saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0, key="t3_folder")
-    label_status = st.selectbox("LABEL", status_options, index=0, key="t3_label")
+    
+    def get_status_idx(session_key):
+        val = st.session_state.get(session_key, "NO ")
+        return status_options.index(val) if val in status_options else 0
+
+    t_splag = st.selectbox("TECHNICAL DOCUMENTATION SPLAG", status_options, index=get_status_idx('t3_splag'), key="t3_splag_input")
+    t_confirmed = st.selectbox("TECHNICAL DOCUMENTATION CONFIRMED", status_options, index=get_status_idx('t3_conf'), key="t3_conf_input")
+    m_chart = st.selectbox("MEASUREMENT CHART", status_options, index=get_status_idx('t3_chart'), key="t3_chart_input")
+    m_check = st.selectbox("MEASUREMENT CHECK OF SAMPLE", status_options, index=get_status_idx('t3_check'), key="t3_check_input")
+    saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=get_status_idx('t3_folder'), key="t3_folder_input")
+    label_status = st.selectbox("LABEL", status_options, index=get_status_idx('t3_label'), key="t3_label_input")
+    
+    st.session_state['t3_splag'] = t_splag
+    st.session_state['t3_conf'] = t_confirmed
+    st.session_state['t3_chart'] = m_chart
+    st.session_state['t3_check'] = m_check
+    st.session_state['t3_folder'] = saved_folder
+    st.session_state['t3_label'] = label_status
 
 # ================= TAB 4: SAMPLE GARMENT =================
 with tab4:
@@ -200,13 +218,19 @@ with tab4:
     st.subheader("⚙️ General Checklist Status")
     col_s1, col_s2, col_s3 = st.columns(3)
     with col_s1:
-        s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=0, key="t4_in_prog")
-        s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=0, key="t4_rev")
+        s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=get_status_idx('t4_in_prog'), key="t4_in_prog_input")
+        s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=get_status_idx('t4_rev'), key="t4_rev_input")
     with col_s2:
-        s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=0, key="t4_conf")
-        s_sent_oeti = st.selectbox("SAMPLE SENT TO OETI", status_options, index=0, key="t4_sent")
+        s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=get_status_idx('t4_conf'), key="t4_conf_input")
+        s_sent_oeti = st.selectbox("SAMPLE SENT TO OETI", status_options, index=get_status_idx('t4_sent'), key="t4_sent_input")
     with col_s3:
-        s_excel = st.selectbox("SAMPLE ENTERED IN OVERVIEW (EXCEL)", status_options, index=0, key="t4_excel")
+        s_excel = st.selectbox("SAMPLE ENTERED IN OVERVIEW (EXCEL)", status_options, index=get_status_idx('t4_excel'), key="t4_excel_input")
+
+    st.session_state['t4_in_prog'] = s_inprogress
+    st.session_state['t4_rev'] = s_revision
+    st.session_state['t4_conf'] = s_confirmed
+    st.session_state['t4_sent'] = s_sent_oeti
+    st.session_state['t4_excel'] = s_excel
 
     st.markdown("---")
     col_sizes, col_ship = st.columns(2)
@@ -229,9 +253,8 @@ with tab4:
             })
             st.success("Size log entry recorded!")
             
-        if st.session_state.sizes_history:
-            edited_sizes = st.data_editor(st.session_state.sizes_history, use_container_width=True, num_rows="dynamic", key="editable_sizes_table")
-            st.session_state.sizes_history = edited_sizes
+        edited_sizes = st.data_editor(st.session_state.sizes_history, use_container_width=True, num_rows="dynamic", key="editable_sizes_table")
+        st.session_state.sizes_history = edited_sizes
 
     with col_ship:
         st.subheader("🚚 Institute Shipment ")
@@ -248,9 +271,8 @@ with tab4:
             })
             st.success("Shipment entry recorded!")
             
-        if st.session_state.institute_shipments:
-            edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, num_rows="dynamic", key="editable_shipments_table")
-            st.session_state.institute_shipments = edited_shipments
+        edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, num_rows="dynamic", key="editable_shipments_table")
+        st.session_state.institute_shipments = edited_shipments
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
     st.header("Sample Mockups Configuration (V2)")
@@ -275,9 +297,8 @@ with tab5:
         
     st.markdown("---")
     st.subheader("📋 Registered Mockups")
-    if st.session_state.mockups_v2_history:
-        edited_mockups = st.data_editor(st.session_state.mockups_v2_history, use_container_width=True, num_rows="dynamic", key="editable_mockups_table")
-        st.session_state.mockups_v2_history = edited_mockups
+    edited_mockups = st.data_editor(st.session_state.mockups_v2_history, use_container_width=True, num_rows="dynamic", key="editable_mockups_table")
+    st.session_state.mockups_v2_history = edited_mockups
 # ================= TAB 6: PREVIEW & FINALISATION =================
 with tab6:
     st.header("Project Overview & Final Summary")
@@ -345,6 +366,7 @@ with tab6:
     
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     
+    # Montagem definitiva estruturada da base de dados salvando a Tab 3 e 4
     final_data = {
         "project_info": {
             "name": p_name_view, "folder": f_num_view, "model": m_name_view,
@@ -352,6 +374,21 @@ with tab6:
             "certification_type": cert_type_view, "institutes": institutes,
             "add_bom": st.session_state.get('t1_add_bom', False),
             "bom_notes": st.session_state.get('t1_bom_notes', "")
+        },
+        "technical_documentation": {
+            "splag": st.session_state.get('t3_splag', "NO "),
+            "confirmed": st.session_state.get('t3_conf', "NO "),
+            "measurement_chart": st.session_state.get('t3_chart', "NO "),
+            "measurement_check": st.session_state.get('t3_check', "NO "),
+            "saved_folder": st.session_state.get('t3_folder', "NO "),
+            "label_status": st.session_state.get('t3_label', "NO ")
+        },
+        "sample_garment_status": {
+            "inprogress": st.session_state.get('t4_in_prog', "NO "),
+            "revision": st.session_state.get('t4_rev', "NO "),
+            "confirmed": st.session_state.get('t4_conf', "NO "),
+            "sent_oeti": st.session_state.get('t4_sent', "NO "),
+            "entered_excel": st.session_state.get('t4_excel', "NO ")
         },
         "materials": st.session_state.materials_list,
         "production_sizes_and_rolls": st.session_state.sizes_history,
