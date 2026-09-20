@@ -92,11 +92,14 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 
 # ================= TAB 2: DOCUMENTS =================
 with tab2:
-    st.header("Materials")
+    st.header("Materials & Document Expiration")
     st.subheader("Add Material Item")
     material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"], key="t2_mat_type")
-    doc_art_name = st.text_input("ARTICLE NAME (SPILAG)", value=article_name_t1, key="t2_art_name")
-    doc_art_num = st.text_input("ARTICLE SUPPLIER NUMBER", value=" ", key="t2_art_num")
+    
+    # CORREÇÃO: Puxa o valor com segurança da memória global do Streamlit
+    default_article_name = st.session_state.get("t1_art", "Premium Cotton Fabric")
+    doc_art_name = st.text_input("ARTICLE NAME (for this material)", value=default_article_name, key="t2_art_name")
+    doc_art_num = st.text_input("ARTICLE NUMBER", value="ART-9922", key="t2_art_num")
     
     col1, col2 = st.columns(2)
     with col1: oekotex = st.checkbox("OEKO-TEX Compliance", key="t2_oeko")
@@ -123,6 +126,7 @@ with tab2:
         st.dataframe(st.session_state.materials_list, use_container_width=True)
         if st.button("🗑️ Clear Materials List", key="t2_clear_btn"):
             st.session_state.materials_list = []
+
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
     st.header("Technical Documentation Status")
