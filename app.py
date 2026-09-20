@@ -79,7 +79,8 @@ with tab2:
     with col1: oekotex = st.checkbox("OEKO-TEX Compliance", key="t2_oeko")
     with col2: text_report = st.checkbox("TEXT REPORT Attached", key="t2_report")
     
-    expiration_date = st.date_input("EXPIRATION DATE", datetime.date.today() + datetime.timedelta(days=2), key="t2_exp_date")
+    # Calendário limpo que se adapta dinamicamente sem travar o Streamlit
+    expiration_date = st.date_input("EXPIRATION DATE", value=datetime.date.today() + datetime.timedelta(days=2), key="t2_exp_date")
     alert_msg, alert_type = check_expiration(expiration_date)
     
     if alert_type == "error": st.error(alert_msg)
@@ -100,6 +101,7 @@ with tab2:
         st.dataframe(st.session_state.materials_list, use_container_width=True)
         if st.button("🗑️ Clear Materials List", key="t2_clear_btn"):
             st.session_state.materials_list = []
+
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
     st.header("Technical Documentation Status")
