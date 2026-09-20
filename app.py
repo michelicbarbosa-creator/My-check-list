@@ -379,24 +379,74 @@ with tab5:
 with tab6:
     st.header("Project Overview & Final Summary")
     
+    # --- ESTILIZAÇÃO CSS PROFISSIONAL - COMPACTAÇÃO FORÇADA NA VERTICAL ---
     st.markdown(
         """
         <style>
         @media print {
+            /* 1. Esconde menus de navegação do Streamlit, barras laterais e botões */
             iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"], [data-testid="stHeaderBlock"] {
                 display: none !important;
             }
-            @page { size: A4 landscape; margin: 0.6cm !important; }
-            [data-testid="stImage"], [data-testid="stElementContainer"], .element-container {
-                page-break-after: avoid !important; page-break-inside: avoid !important; display: block !important;
+            /* 2. CORREÇÃO DA ORIENTAÇÃO: Força o papel a ficar na VERTICAL (Portrait) automático */
+            @page { 
+                size: A4 portrait; 
+                margin: 0.8cm !important; 
             }
-            [data-testid="stImage"] img, img { max-width: 140px !important; height: auto !important; margin: 0 auto !important; display: block !important; }
-            .main .block-container { padding-top: 0cm !important; padding-bottom: 0cm !important; max-width: 100% !important; transform: scale(0.85) !important; transform-origin: top left !important; margin-top: -20px !important; }
-            [data-testid="stHorizontalBlock"] { display: block !important; float: none !important; width: 100% !important; page-break-inside: avoid !important; page-break-after: auto !important; }
-            [data-testid="column"] { display: block !important; width: 100% !important; max-width: 100% !important; float: none !important; padding: 0 !important; margin-bottom: 15px !important; page-break-inside: avoid !important; }
-            .stDataFrame, table { width: 100% !important; margin-top: 2px !important; margin-bottom: 5px !important; }
-            h1, h2, h3 { color: #00519E !important; margin-top: 8px !important; margin-bottom: 4px !important; page-break-after: avoid !important; page-break-before: avoid !important; }
-            p, span, div, text { page-break-inside: avoid !important; }
+            /* 3. Evita quebras de página no topo e encolhe o logo SPILAG */
+            [data-testid="stImage"], [data-testid="stElementContainer"], .element-container {
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                display: block !important;
+            }
+            [data-testid="stImage"] img, img {
+                max-width: 130px !important;
+                height: auto !important;
+                margin: 0 auto !important;
+                display: block !important;
+            }
+            /* 4. Ajuste global do tamanho real (80%) para caber na folha vertical */
+            .main .block-container { 
+                padding-top: 0cm !important; 
+                padding-bottom: 0cm !important; 
+                max-width: 100% !important; 
+                transform: scale(0.80) !important; 
+                transform-origin: top left !important;
+                margin-top: -15px !important; 
+            }
+            /* 5. Força as tabelas a ficarem uma por baixo da outra de forma organizada */
+            [data-testid="stHorizontalBlock"] { 
+                display: block !important; 
+                float: none !important; 
+                width: 100% !important; 
+                page-break-inside: avoid !important;
+                page-break-after: auto !important;
+            }
+            [data-testid="column"] { 
+                display: block !important; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                float: none !important; 
+                padding: 0 !important; 
+                margin-bottom: 20px !important; /* Espaço confortável entre blocos */
+                page-break-inside: avoid !important; 
+            }
+            /* 6. Ajuste compacto das tabelas de dados */
+            .stDataFrame, table { 
+                width: 100% !important; 
+                margin-top: 2px !important; 
+                margin-bottom: 5px !important; 
+            }
+            h1, h2, h3 { 
+                color: #00519E !important; 
+                margin-top: 10px !important; 
+                margin-bottom: 4px !important;
+                page-break-after: avoid !important; 
+                page-break-before: avoid !important;
+            }
+            p, span, div, text {
+                page-break-inside: avoid !important;
+            }
         }
         </style>
         """,
