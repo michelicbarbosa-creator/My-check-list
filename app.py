@@ -39,7 +39,7 @@ if 'sizes_history' not in st.session_state: st.session_state.sizes_history = []
 if 'institute_shipments' not in st.session_state: st.session_state.institute_shipments = []
 if 'mockups_v2_history' not in st.session_state: st.session_state.mockups_v2_history = []
 
-# Começa vazio por padrão
+# Inicialização limpa e vazia de todas as caixas visuais
 if 't1_p_name' not in st.session_state: st.session_state['t1_p_name'] = ""
 if 't1_f_num' not in st.session_state: st.session_state['t1_f_num'] = ""
 if 't1_m_name' not in st.session_state: st.session_state['t1_m_name'] = ""
@@ -106,6 +106,13 @@ if st.sidebar.button("➕ Start New Project Blank"):
     st.session_state['t1_m_name'] = ""
     st.session_state['t1_art'] = ""
     st.session_state['t1_bom_notes'] = ""
+    
+    if 't1_p_name_input' in st.session_state: st.session_state['t1_p_name_input'] = ""
+    if 't1_f_num_input' in st.session_state: st.session_state['t1_f_num_input'] = ""
+    if 't1_m_name_input' in st.session_state: st.session_state['t1_m_name_input'] = ""
+    if 't1_art_input' in st.session_state: st.session_state['t1_art_input'] = ""
+    if 't1_bom_notes_input' in st.session_state: st.session_state['t1_bom_notes_input'] = ""
+    
     st.session_state['t1_oeti'] = False
     st.session_state['t1_testex'] = False
     st.session_state['t1_hoh'] = False
