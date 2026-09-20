@@ -45,7 +45,7 @@ if 't1_m_name' not in st.session_state: st.session_state['t1_m_name'] = "Standar
 if 't1_art' not in st.session_state: st.session_state['t1_art'] = "Premium Cotton Fabric"
 if 't1_bom_notes' not in st.session_state: st.session_state['t1_bom_notes'] = ""
 
-status_options = ["NO NEED", "IN PROGRESS ", "GREEN / OK "]
+status_options = ["NO ", "IN PROGRESS ", " OK "]
 
 def check_expiration(exp_date):
     today = datetime.date.today()
@@ -72,11 +72,11 @@ if all_saved_projects:
                 st.session_state.mockups_v2_history = p_data.get("mockups", [])
                 
                 info = p_data.get("project_info", {})
-                st.session_state['t1_p_name'] = info.get("name", "Project Alpha")
-                st.session_state['t1_f_num'] = info.get("folder", "F-2026-001")
-                st.session_state['t1_m_name'] = info.get("model", "Standard V1")
-                st.session_state['t1_art'] = info.get("article_name_t1", "Premium Cotton Fabric")
-                st.session_state['t1_cert'] = info.get("certification_type", "NEW CERTIFICATION")
+                st.session_state['t1_p_name'] = info.get("name", " ")
+                st.session_state['t1_f_num'] = info.get("folder", " ")
+                st.session_state['t1_m_name'] = info.get("model", " ")
+                st.session_state['t1_art'] = info.get("article_name_t1", " ")
+                st.session_state['t1_cert'] = info.get("certification_type", " ")
                 st.session_state['t1_bom_notes'] = info.get("bom_notes", "")
                 
                 st.success(f"Loaded: {selected_proj}")
@@ -208,9 +208,9 @@ with tab4:
     
     with col_sizes:
         st.subheader("📦 Production ")
-        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="ORD-2026", key="t4_sz_ord")
-        input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
-        input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
+        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="", key="t4_sz_ord")
+        input_size_qty = st.number_input("QUANTITY ", min_value=1, value=1, key="t4_sz_qty")
+        input_size = st.text_input("SIZE ", value="M", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
         input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
