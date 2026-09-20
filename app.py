@@ -150,9 +150,9 @@ with tab4:
     
     with col_sizes:
         st.subheader("📦 Production ")
-        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="ORD-2026", key="t4_sz_ord")
+        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value=" ", key="t4_sz_ord")
         input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
-        input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
+        input_size = st.text_input("SIZE (e.g., P, M, L,G, 42)", value=" ", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
         input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
@@ -171,10 +171,10 @@ with tab4:
 
     with col_ship:
         st.subheader("🚚 Institute Shipment ")
-        ship_order = st.text_input("ORDER NUMBER", value="ORD-2026", key="t4_sh_ord")
+        ship_order = st.text_input("ORDER NUMBER", value=" ", key="t4_sh_ord")
         ship_qty = st.number_input("QUANTITY SENT", min_value=1, value=1, key="t4_sh_qty")
-        ship_size = st.text_input("SIZE", value="L", key="t4_sh_sz")
-        ship_fabric = st.text_input("MAIN FABRIC", value="100% Polyester", key="t4_sh_fab")
+        ship_size = st.text_input("SIZE", value=" ", key="t4_sh_sz")
+        ship_fabric = st.text_input("MAIN FABRIC", value=" ", key="t4_sh_fab")
         ship_date = st.date_input("SHIPMENT DATE", datetime.date.today(), key="t4_sh_dt")
         ship_status = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t4_sh_st")
         
