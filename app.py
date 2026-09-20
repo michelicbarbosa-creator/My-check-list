@@ -45,6 +45,7 @@ if 't1_m_name' not in st.session_state: st.session_state['t1_m_name'] = "Standar
 if 't1_art' not in st.session_state: st.session_state['t1_art'] = "Premium Cotton Fabric"
 if 't1_bom_notes' not in st.session_state: st.session_state['t1_bom_notes'] = ""
 
+# Suas opções customizadas mantidas aqui:
 status_options = ["NO ", "IN PROGRESS ", " OK "]
 
 def check_expiration(exp_date):
@@ -107,6 +108,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Project Info", "2. Documents ", "3. Technical Documentation", 
     "4. Sample Garment ", "5. Sample Mockups ", "6. Preview & Finalisation"
 ])
+
 # ================= TAB 1: PROJECT INFO =================
 with tab1:
     st.header("Project Identification")
@@ -179,16 +181,6 @@ with tab3:
     saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0, key="t3_folder")
     label_status = st.selectbox("LABEL", status_options, index=0, key="t3_label")
 
-# ================= TAB 3: TECHNICAL DOCUMENTATION =================
-with tab3:
-    st.header("Technical Documentation Status")
-    t_splag = st.selectbox("TECHNICAL DOCUMENTATION SPLAG", status_options, index=0, key="t3_splag")
-    t_confirmed = st.selectbox("TECHNICAL DOCUMENTATION CONFIRMED", status_options, index=0, key="t3_conf")
-    m_chart = st.selectbox("MEASUREMENT CHART", status_options, index=0, key="t3_chart")
-    m_check = st.selectbox("MEASUREMENT CHECK OF SAMPLE", status_options, index=0, key="t3_check")
-    saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=0, key="t3_folder")
-    label_status = st.selectbox("LABEL", status_options, index=0, key="t3_label")
-
 # ================= TAB 4: SAMPLE GARMENT =================
 with tab4:
     st.header("Sample Garment ")
@@ -208,171 +200,8 @@ with tab4:
     
     with col_sizes:
         st.subheader("📦 Production ")
-        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="", key="t4_sz_ord")
-        input_size_qty = st.number_input("QUANTITY ", min_value=1, value=1, key="t4_sz_qty")
-        input_size = st.text_input("SIZE ", value="M", key="t4_sz_val")
+        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="ORD-2026", key="t4_sz_ord")
+        input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
+        input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
-        input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
-        input_lot_fabric = st.text_input("LOT FABRIC", value="", key="t4_lot_fab")
-        input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key="t4_num_roll_ref")
-
-        if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
-            st.session_state.sizes_history.append({
-                "Order Number": input_order_num, "Qty": input_size_qty, "Size": input_size, "Date": str(input_size_date),
-                "Number Roll Fabric": input_num_roll_fabric, "Lot Fabric": input_lot_fabric, "Number Roll Reflex": input_num_roll_reflex
-            })
-            st.success("Size log entry recorded!")
-            
-        if st.session_state.sizes_history:
-            edited_sizes = st.data_editor(st.session_state.sizes_history, use_container_width=True, num_rows="dynamic", key="editable_sizes_table")
-            st.session_state.sizes_history = edited_sizes
-
-    with col_ship:
-        st.subheader("🚚 Institute Shipment ")
-        ship_order = st.text_input("ORDER NUMBER", value="ORD-2026", key="t4_sh_ord")
-        ship_qty = st.number_input("QUANTITY SENT", min_value=1, value=1, key="t4_sh_qty")
-        ship_size = st.text_input("SIZE", value="L", key="t4_sh_sz")
-        ship_fabric = st.text_input("MAIN FABRIC", value="100% Polyester", key="t4_sh_fab")
-        ship_date = st.date_input("SHIPMENT DATE", datetime.date.today(), key="t4_sh_dt")
-        ship_status = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t4_sh_st")
-        
-        if st.button("➕ Add Shipment to Institute", key="t4_add_sh_btn"):
-            st.session_state.institute_shipments.append({
-                "Order Number": ship_order, "Qty Sent": ship_qty, "Size": ship_size, "Main Fabric": ship_fabric, "Shipment Date": str(ship_date), "Status": ship_status
-            })
-            st.success("Shipment entry recorded!")
-            
-        if st.session_state.institute_shipments:
-            edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, num_rows="dynamic", key="editable_shipments_table")
-            st.session_state.institute_shipments = edited_shipments
-
-
-# ================= TAB 5: SAMPLE MOCKUPS =================
-with tab5:
-    st.header("Sample Mockups Configuration (V2)")
-    st.subheader("Add Mockup Details")
-    
-    col_m1, col_m2 = st.columns(2)
-    with col_m1:
-        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value="Main Seam", key="t5_part")
-        mockup_material = st.text_input("MATERIAL USED", value="Reflective Tape Type A", key="t5_mat")
-        mockup_ship_date = st.date_input("SHIPMENT DATE TO INSTITUTE", datetime.date.today(), key="t5_ship_date")
-    with col_m2:
-        mockup_qty = st.number_input("MOCKUP QTY", min_value=1, value=1, key="t5_qty")
-        mockup_status = st.selectbox("MOCKUP STATUS", status_options, index=1, key="t5_status")
-        mockup_approval = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t5_approval")
-        
-    if st.button("➕ Add Mockup to Project", key="t5_add_btn"):
-        st.session_state.mockups_v2_history.append({
-            "Component/Part": mockup_part, "Material": mockup_material, "Qty": mockup_qty, "Status": mockup_status,
-            "Shipment Date": str(mockup_ship_date), "Approval": mockup_approval
-        })
-        st.success("Mockup added successfully!")
-        
-    st.markdown("---")
-    st.subheader("📋 Registered Mockups")
-    if st.session_state.mockups_v2_history:
-        edited_mockups = st.data_editor(st.session_state.mockups_v2_history, use_container_width=True, num_rows="dynamic", key="editable_mockups_table")
-        st.session_state.mockups_v2_history = edited_mockups
-
-# ================= TAB 6: PREVIEW & FINALISATION =================
-with tab6:
-    st.header("Project Overview & Final Summary")
-    
-    st.markdown(
-        """
-        <style>
-        @media print {
-            iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"] {
-                display: none !important;
-            }
-            @page { size: A4 landscape; margin: 1.5cm; }
-            .main .block-container { padding-top: 0cm !important; padding-bottom: 0cm !important; max-width: 100% !important; }
-            [data-testid="stHorizontalBlock"] { display: block !important; float: none !important; width: 100% !important; }
-            [data-testid="column"] { display: block !important; width: 100% !important; max-width: 100% !important; float: none !important; padding: 0 !important; margin-bottom: 35px !important; page-break-inside: avoid; }
-            .stDataFrame, table { width: 100% !important; margin-top: 5px !important; margin-bottom: 15px !important; }
-            h1, h2, h3 { color: #1E3A8A !important; margin-top: 20px !important; page-break-after: avoid; }
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.subheader("📌 General Project Info")
-    
-    p_name_view = st.session_state.get('t1_p_name', '')
-    f_num_view = st.session_state.get('t1_f_num', '')
-    m_name_view = st.session_state.get('t1_m_name', '')
-    cert_type_view = st.session_state.get('t1_cert', 'NEW CERTIFICATION')
-    
-    st.write(f"**Project Name:** {p_name_view}")
-    st.write(f"**Folder Number:** {f_num_view}")
-    st.write(f"**Model:** {m_name_view}")
-    st.write(f"**Type:** {cert_type_view}")
-    
-    institutes = []
-    if st.session_state.get('t1_oeti'): institutes.append("OETI")
-    if st.session_state.get('t1_testex'): institutes.append("TESTEX")
-    if st.session_state.get('t1_hoh'): institutes.append("HOHENSTEIN")
-    st.write(f"**Target Institutes:** {', '.join(institutes) if institutes else 'None Selected'}")
-    
-    st.markdown("---")
-    col_summary1, col_summary2 = st.columns(2)
-    
-    with col_summary1:
-        st.subheader("🗒️ Materials & Expiration Summary")
-        if st.session_state.materials_list: st.dataframe(st.session_state.materials_list, use_container_width=True)
-        else: st.info("No materials added yet.")
-            
-        st.subheader("📐 Production Sizes (with Roll Info)")
-        if st.session_state.sizes_history: st.dataframe(st.session_state.sizes_history, use_container_width=True)
-        else: st.info("No production sizes recorded.")
-
-    with col_summary2:
-        st.subheader("🚚 Institute Shipments")
-        if st.session_state.institute_shipments: st.dataframe(st.session_state.institute_shipments, use_container_width=True)
-        else: st.info("No shipments recorded.")
-            
-        st.subheader("🎨 Mockups Status")
-        if st.session_state.mockups_v2_history: st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)
-        else: st.info("No mockups added.")
-
-    st.markdown("---")
-    st.subheader("💾 Cloud & Export Options")
-    
-    col_btn1, col_btn2, col_btn3 = st.columns(3)
-    
-    final_data = {
-        "project_info": {
-            "name": p_name_view, "folder": f_num_view, "model": m_name_view,
-            "certification_type": cert_type_view, "institutes": institutes,
-            "bom_notes": st.session_state.get('t1_bom_notes', "")
-        },
-        "materials": st.session_state.materials_list,
-        "production_sizes_and_rolls": st.session_state.sizes_history,
-        "shipments": st.session_state.institute_shipments,
-        "mockups": st.session_state.mockups_v2_history
-    }
-    
-    with col_btn1:
-        if st.button("☁️ Save Project to Cloud Database", key="t6_cloud_save"):
-            if p_name_view and f_num_view:
-                project_id = f"{f_num_view} - {p_name_view}"
-                save_project_to_db(project_id, final_data)
-                st.success(f"Project '{project_id}' securely stored in Cloud Database!")
-                st.rerun()
-            else:
-                st.error("Please fill in Project Name and Folder Number in Tab 1 before saving.")
-            
-    with col_btn2:
-        if st.button("🖨️ Export PDF / Print Report", key="t6_print_pdf_btn"):
-            st.components.v1.html("<script>window.parent.print();</script>", height=0)
-            st.info("Opening system print dialog...")
-            
-    with col_btn3:
-        json_string = json.dumps(final_data, indent=4, ensure_ascii=False)
-        st.download_button(
-            label="📥 Download JSON Backup", data=json_string,
-            file_name=f"checklist_{f_num_view if f_num_view else 'export'}.json", mime="application/json"
-        )
