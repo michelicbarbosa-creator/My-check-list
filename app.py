@@ -26,20 +26,28 @@ def save_project_to_db(project_id, data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(projects, f, indent=4, ensure_ascii=False)
 
+# NOVA FUNÇÃO: Apaga o projeto do ficheiro da nuvem de forma definitiva
+def delete_project_from_db(project_id):
+    projects = load_all_projects()
+    if project_id in projects:
+        del projects[project_id]
+        with open(DB_FILE, "w", encoding="utf-8") as f:
+            json.dump(projects, f, indent=4, ensure_ascii=False)
+
 # 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL
 if 'materials_list' not in st.session_state: st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state: st.session_state.sizes_history = []
 if 'institute_shipments' not in st.session_state: st.session_state.institute_shipments = []
 if 'mockups_v2_history' not in st.session_state: st.session_state.mockups_v2_history = []
 
-status_options = ["NO ", "IN PROGRESS ", "OK "]
+status_options = ["NO NEED", "IN PROGRESS ", "GREEN / OK "]
 
 # VALORES PADRÃO DA SESSÃO
-if 'project_name' not in st.session_state: st.session_state.project_name = " "
-if 'folder_number' not in st.session_state: st.session_state.folder_number = " "
-if 'model_name' not in st.session_state: st.session_state.model_name = " "
-if 'article_name_t1' not in st.session_state: st.session_state.article_name_t1 = " "
-if 'cert_type' not in st.session_state: st.session_state.cert_type = " "
+if 'project_name' not in st.session_state: st.session_state.project_name = "Project Alpha"
+if 'folder_number' not in st.session_state: st.session_state.folder_number = "F-2026-001"
+if 'model_name' not in st.session_state: st.session_state.model_name = "Standard V1"
+if 'article_name_t1' not in st.session_state: st.session_state.article_name_t1 = "Premium Cotton Fabric"
+if 'cert_type' not in st.session_state: st.session_state.cert_type = "NEW CERTIFICATION"
 
 def check_expiration(exp_date):
     today = datetime.date.today()
@@ -47,7 +55,7 @@ def check_expiration(exp_date):
     elif (exp_date - today).days == 1: return "🟨 WARNING: Expires Tomorrow!", "warning"
     else: return "🟩 Valid Document", "success"
 
-# --- PAINEL DE PESQUISA NA NUVEM (Histórico) ---
+# --- PAINEL DE PESQUISA NA NUVEM (Histórico Atualizado) ---
 st.sidebar.header("🔍 Search & Load Project")
 all_saved_projects = load_all_projects()
 if all_saved_projects:
@@ -55,13 +63,24 @@ if all_saved_projects:
     selected_proj = st.sidebar.selectbox("Saved Projects", search_options)
     
     if selected_proj != "-- Select a Project --":
-        if st.sidebar.button("📂 Load Selected Project"):
-            p_data = all_saved_projects[selected_proj]
-            st.session_state.materials_list = p_data.get("materials", [])
-            st.session_state.sizes_history = p_data.get("production_sizes_and_rolls", [])
-            st.session_state.institute_shipments = p_data.get("shipments", [])
-            st.session_state.mockups_v2_history = p_data.get("mockups", [])
-            st.sidebar.success(f"Project {selected_proj} loaded successfully!")
+        col_side1, col_side2 = st.sidebar.columns(2)
+        
+        with col_side1:
+            if st.button("📂 Load Project"):
+                p_data = all_saved_projects[selected_proj]
+                st.session_state.materials_list = p_data.get("materials", [])
+                st.session_state.sizes_history = p_data.get("production_sizes_and_rolls", [])
+                st.session_state.institute_shipments = p_data.get("shipments", [])
+                st.session_state.mockups_v2_history = p_data.get("mockups", [])
+                st.success(f"Loaded: {selected_proj}")
+                st.rerun()
+                
+        with col_side2:
+            # BOTÃO DE ELIMINAÇÃO DA NUVEM
+            if st.button("🗑️ Delete Cloud"):
+                delete_project_from_db(selected_proj)
+                st.sidebar.warning(f"Deleted: {selected_proj}")
+                st.rerun()
 else:
     st.sidebar.info("No projects saved yet.")
 
@@ -70,24 +89,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Project Info", "2. Documents ", "3. Technical Documentation", 
     "4. Sample Garment ", "5. Sample Mockups ", "6. Preview & Finalisation"
 ])
-# ================= TAB 1: PROJECT INFO =================
-with tab1:
-    st.header("Project Identification")
-    project_name = st.text_input("PROJECT NAME", value=st.session_state.project_name, key="t1_p_name")
-    folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value=st.session_state.folder_number, key="t1_f_num")
-    model_name = st.text_input("MODEL", value=st.session_state.model_name, key="t1_m_name")
-    article_name_t1 = st.text_input("ARTICLE", value=st.session_state.article_name_t1, key="t1_art")
-    cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"], key="t1_cert")
-    
-    st.markdown("---")
-    st.subheader("🏛️ TARGET CERTIFICATION INSTITUTE")
-    inst_oeti = st.checkbox("OETI", key="t1_oeti")
-    inst_testex = st.checkbox("TESTEX", key="t1_testex")
-    inst_hohenstein = st.checkbox("HOHENSTEIN", key="t1_hoh")
-    
-    st.markdown("---")
-    add_bom = st.checkbox("ADD BOM (Bill of Materials)", key="t1_add_bom")
-    bom_notes = st.text_area("BOM NOTES / REVISIONS", key="t1_bom_notes")
+
 # ================= TAB 2: DOCUMENTS =================
 with tab2:
     st.header("Materials")
