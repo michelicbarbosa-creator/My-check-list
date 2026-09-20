@@ -201,12 +201,12 @@ with tab4:
 
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
-    st.header("Sample Mockups Configuration (V2)")
+    st.header("Sample Mockups")
     st.subheader("Add Mockup Details")
     
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value=" ", key="t5_part")
+        mockup_part = st.text_input("MOCKUP (article)", value=" ", key="t5_part")
         mockup_material = st.text_input("MATERIAL USED", value=" ", key="t5_mat")
     with col_m2:
         mockup_qty = st.number_input("MOCKUP QTY", min_value=1, value=1, key="t5_qty")
