@@ -4,9 +4,48 @@ import sqlite3
 import json
 import os
 
-# Configuração Principal do Programa
-st.set_page_config(page_title="Certification Checklist", layout="wide")
-st.title("📋 Certification Checklist Program")
+# Configuração Principal do Programa com Identidade SPILAG
+st.set_page_config(page_title="SPILAG - Certification Checklist", layout="wide")
+
+# ESTILIZAÇÃO VISUAL CORPORATIVA (Vermelho SPILAG #E32119 e Azul SPILAG #00519E)
+st.markdown(
+    """
+    <style>
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #E32119 !important;
+        border-bottom-color: #E32119 !important;
+    }
+    h1, h2, h3 {
+        color: #00519E !important;
+    }
+    div.stButton > button:first-child {
+        background-color: #00519E;
+        color: white;
+        border-radius: 6px;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #E32119;
+        color: white;
+        border-color: #E32119;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Exibição do Logo no Topo Centralizado
+col_logo_1, col_logo_2, col_logo_3 = st.columns([1,2,1])
+with col_logo_2:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_container_width=True)
+    else:
+        st.write("<h2 style='text-align:center; color:#E32119;'>🔺 SPILAG AG</h2>", unsafe_allow_html=True)
+
+st.markdown("<h1 style='text-align: center; margin-top: -10px;'>📋 Certification Checklist Program</h1>", unsafe_allow_html=True)
 
 # BANCO DE DADOS LOCAL/NUVEM SIMPLIFICADO
 DB_FILE = "projects_database.json"
@@ -14,10 +53,8 @@ DB_FILE = "projects_database.json"
 def load_all_projects():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r", encoding="utf-8") as f:
-            try:
-                return json.load(f)
-            except:
-                return {}
+            try: return json.load(f)
+            except: return {}
     return {}
 
 def save_project_to_db(project_id, data):
@@ -33,10 +70,8 @@ def delete_project_from_db(project_id):
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(projects, f, indent=4, ensure_ascii=False)
 
-# 1. INICIALIZAÇÃO CONTROLANDO O COCKPIT DE LIMPEZA (Garante ecrã em branco)
-if 'generation_id' not in st.session_state:
-    st.session_state['generation_id'] = 0
-
+# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL TOTALMENTE EM BRANCO
+if 'generation_id' not in st.session_state: st.session_state['generation_id'] = 0
 if 'materials_list' not in st.session_state: st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state: st.session_state.sizes_history = []
 if 'institute_shipments' not in st.session_state: st.session_state.institute_shipments = []
@@ -56,7 +91,7 @@ def check_expiration(exp_date):
     elif (exp_date - today).days == 1: return "🟨 WARNING: Expires Tomorrow!", "warning"
     else: return "🟩 Valid Document", "success"
 
-# --- PAINEL DE PESQUISA NA NUVEM (Histórico) ---
+# --- PAINEL DE PESQUISA NA NUVEM ---
 st.sidebar.header("🔍 Search & Load Project")
 all_saved_projects = load_all_projects()
 if all_saved_projects:
@@ -65,7 +100,6 @@ if all_saved_projects:
     
     if selected_proj != "-- Select a Project --":
         col_side1, col_side2 = st.sidebar.columns(2)
-        
         with col_side1:
             if st.button("📂 Load Project"):
                 p_data = all_saved_projects[selected_proj]
@@ -101,10 +135,8 @@ if all_saved_projects:
                 st.session_state['t4_conf'] = garment.get("confirmed", "NO ")
                 st.session_state['t4_sent'] = garment.get("sent_oeti", "NO ")
                 st.session_state['t4_excel'] = garment.get("entered_excel", "NO ")
-                
                 st.success(f"Loaded: {selected_proj}")
                 st.rerun()
-                
         with col_side2:
             if st.button("🗑️ Delete Cloud"):
                 delete_project_from_db(selected_proj)
@@ -113,15 +145,11 @@ if all_saved_projects:
 else:
     st.sidebar.info("No projects saved in cloud database yet.")
 
-# CORREÇÃO DEFINITIVA DO BOTÃO NOVO PROJETO: Altera a geração visual e limpa tudo
 if st.sidebar.button("➕ Start New Project Blank"):
-    # Limpa as listas de dados das tabelas
     st.session_state.materials_list = []
     st.session_state.sizes_history = []
     st.session_state.institute_shipments = []
     st.session_state.mockups_v2_history = []
-    
-    # Limpa os dados de texto
     st.session_state['t1_p_name'] = ""
     st.session_state['t1_f_num'] = ""
     st.session_state['t1_m_name'] = ""
@@ -131,15 +159,11 @@ if st.sidebar.button("➕ Start New Project Blank"):
     st.session_state['t1_testex'] = False
     st.session_state['t1_hoh'] = False
     st.session_state['t1_add_bom'] = False
-    
-    # Muda o ID de geração. Isto força o Streamlit a destruir os inputs antigos e criar caixas novas em branco
     st.session_state['generation_id'] += 1
     st.rerun()
 
-# Criamos um sufixo baseado no ID de geração para atualizar as caixas visuais
 gen = st.session_state['generation_id']
 
-# --- ESTRUTURA DAS 6 ABAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Project Info", "2. Documents ", "3. Technical Documentation", 
     "4. Sample Garment ", "5. Sample Mockups ", "6. Preview & Finalisation"
@@ -147,8 +171,6 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 # ================= TAB 1: PROJECT INFO =================
 with tab1:
     st.header("Project Identification")
-    
-    # O uso do sufixo f"_{gen}" força as caixas a esvaziarem por completo no clique do botão
     project_name = st.text_input("PROJECT NAME", value=st.session_state['t1_p_name'], key=f"t1_p_name_input_{gen}")
     folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value=st.session_state['t1_f_num'], key=f"t1_f_num_input_{gen}")
     model_name = st.text_input("MODEL", value=st.session_state['t1_m_name'], key=f"t1_m_name_input_{gen}")
@@ -214,7 +236,6 @@ with tab2:
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
     st.header("Technical Documentation Status")
-    
     def get_status_idx(session_key):
         val = st.session_state.get(session_key, "NO ")
         return status_options.index(val) if val in status_options else 0
@@ -336,7 +357,7 @@ with tab6:
             [data-testid="stHorizontalBlock"] { display: block !important; float: none !important; width: 100% !important; }
             [data-testid="column"] { display: block !important; width: 100% !important; max-width: 100% !important; float: none !important; padding: 0 !important; margin-bottom: 35px !important; page-break-inside: avoid; }
             .stDataFrame, table { width: 100% !important; margin-top: 5px !important; margin-bottom: 15px !important; }
-            h1, h2, h3 { color: #1E3A8A !important; margin-top: 20px !important; page-break-after: avoid; }
+            h1, h2, h3 { color: #00519E !important; margin-top: 20px !important; page-break-after: avoid; }
         }
         </style>
         """,
@@ -344,7 +365,6 @@ with tab6:
     )
 
     st.subheader("📌 General Project Info")
-    
     p_name_view = st.session_state.get('t1_p_name', '')
     f_num_view = st.session_state.get('t1_f_num', '')
     m_name_view = st.session_state.get('t1_m_name', '')
@@ -421,7 +441,7 @@ with tab6:
             if p_name_view and f_num_view:
                 project_id = f"{f_num_view} - {p_name_view}"
                 save_project_to_db(project_id, final_data)
-                st.success(f"Project '{project_id}' securely stored in Cloud Database!")
+                st.success(f"Project '{project_id}' stored in Cloud Database!")
                 st.rerun()
             else:
                 st.error("Please fill in Project Name and Folder Number in Tab 1 before saving.")
@@ -438,4 +458,3 @@ with tab6:
             file_name=f"checklist_{f_num_view if f_num_view else 'export'}.json", mime="application/json",
             key=f"t6_json_dl_btn_{gen}"
         )
-
