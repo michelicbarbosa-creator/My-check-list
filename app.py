@@ -357,16 +357,23 @@ with tab6:
             /* Configuração da folha com aproveitamento máximo de espaço horizontal */
             @page { 
                 size: A4 landscape; 
-                margin: 0.5cm !important; 
+                margin: 0.6cm !important; 
             }
-            /* CORREÇÃO DO ESPAÇO EM BRANCO: Reduz o tamanho real mantendo os blocos juntos */
+            /* CORREÇÃO DO LOGO ISOLADO: Encolhe a imagem do logo apenas no papel para não forçar quebra de página */
+            [data-testid="stImage"] img, img {
+                max-width: 120px !important;
+                height: auto !important;
+                margin: 0 auto !important;
+                display: block !important;
+            }
+            /* Reduz o tamanho real mantendo os blocos juntos */
             .main .block-container { 
                 padding-top: 0cm !important; 
                 padding-bottom: 0cm !important; 
                 max-width: 100% !important; 
-                transform: scale(0.82) !important; /* Encolhe o relatório para caber em menos folhas */
+                transform: scale(0.85) !important; 
                 transform-origin: top left !important;
-                margin-top: -30px !important; /* Elimina o espaço vazio do topo no papel */
+                margin-top: -10px !important; 
             }
             /* Junta as colunas paralelas do monitor para empilharem sem quebrar página */
             [data-testid="stHorizontalBlock"] { 
@@ -381,7 +388,7 @@ with tab6:
                 max-width: 100% !important; 
                 float: none !important; 
                 padding: 0 !important; 
-                margin-bottom: 10px !important; /* Menos espaço entre as tabelas */
+                margin-bottom: 12px !important; 
                 page-break-inside: avoid !important; 
             }
             /* Ajuste compacto das tabelas de dados */
@@ -392,11 +399,10 @@ with tab6:
             }
             h1, h2, h3 { 
                 color: #00519E !important; 
-                margin-top: 8px !important; 
-                margin-bottom: 3px !important;
+                margin-top: 6px !important; 
+                margin-bottom: 2px !important;
                 page-break-after: avoid !important; 
             }
-            /* Evita que pequenos parágrafos criem uma folha nova sozinhos */
             p, span, div {
                 page-break-inside: avoid !important;
             }
@@ -501,3 +507,4 @@ with tab6:
             file_name=f"checklist_{f_num_view if f_num_view else 'export'}.json", mime="application/json",
             key=f"t6_json_dl_btn_{gen}"
         )
+
