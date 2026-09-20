@@ -194,8 +194,8 @@ with tab5:
     
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value="Main Seam", key="t5_part")
-        mockup_material = st.text_input("MATERIAL USED", value="Reflective Tape Type A", key="t5_mat")
+        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value=" ", key="t5_part")
+        mockup_material = st.text_input("MATERIAL USED", value=" ", key="t5_mat")
     with col_m2:
         mockup_qty = st.number_input("MOCKUP QTY", min_value=1, value=1, key="t5_qty")
         mockup_status = st.selectbox("MOCKUP STATUS", status_options, index=1, key="t5_status")
