@@ -32,7 +32,7 @@ if 'sizes_history' not in st.session_state: st.session_state.sizes_history = []
 if 'institute_shipments' not in st.session_state: st.session_state.institute_shipments = []
 if 'mockups_v2_history' not in st.session_state: st.session_state.mockups_v2_history = []
 
-status_options = ["NO NEED", "IN PROGRESS ", "GREEN / OK "]
+status_options = ["NO ", "IN PROGRESS ", "OK "]
 
 # VALORES PADRÃO DA SESSÃO
 if 'project_name' not in st.session_state: st.session_state.project_name = "Project Alpha"
