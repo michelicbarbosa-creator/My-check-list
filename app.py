@@ -216,6 +216,47 @@ with tab5:
 with tab6:
     st.header("Project Overview & Final Summary")
     
+    # --- ESTILIZAÇÃO CSS DE ALTA PRECISÃO PARA IMPRESSÃO ---
+    # Força o navegador a quebrar as colunas em linhas e expandir as tabelas para evitar sobreposição
+    st.markdown(
+        """
+        <style>
+        @media print {
+            /* Esconde menus de navegação do Streamlit, barras laterais e botões */
+            iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"] {
+                display: none !important;
+            }
+            /* Remove margens excessivas da página */
+            .main .block-container {
+                padding-top: 1cm !important;
+                padding-bottom: 1cm !important;
+                max-width: 100% !important;
+            }
+            /* Força as colunas paralelas do monitor a ficarem uma por baixo da outra no papel */
+            [data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+            [data-testid="column"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin-bottom: 20px !important;
+            }
+            /* Garante que as tabelas ocupam toda a largura útil sem cortar texto */
+            .stDataFrame, table {
+                width: 100% !important;
+                page-break-inside: avoid;
+            }
+            h1, h2, h3 {
+                color: #1E3A8A !important;
+                page-break-after: avoid;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.subheader("📌 General Project Info")
     st.write(f"**Project Name:** {st.session_state.get('t1_p_name', project_name)}")
     st.write(f"**Folder Number:** {st.session_state.get('t1_f_num', folder_number)}")
@@ -226,27 +267,38 @@ with tab6:
     if st.session_state.get('t1_oeti'): institutes.append("OETI")
     if st.session_state.get('t1_testex'): institutes.append("TESTEX")
     if st.session_state.get('t1_hoh'): institutes.append("HOHENSTEIN")
+    st.write(f"**Target Institutes:** {', '.join(institutes) if institutes else 'None Selected'}")
     
     st.markdown("---")
+    
+    # Mantém o visual em duas colunas no monitor, mas o CSS acima corrige para uma coluna na impressão
     col_summary1, col_summary2 = st.columns(2)
     
     with col_summary1:
         st.subheader("🗒️ Materials & Expiration Summary")
-        if st.session_state.materials_list: st.dataframe(st.session_state.materials_list, use_container_width=True)
-        else: st.info("No materials added yet.")
+        if st.session_state.materials_list: 
+            st.dataframe(st.session_state.materials_list, use_container_width=True)
+        else: 
+            st.info("No materials added yet.")
             
         st.subheader("📐 Production Sizes (with Roll Info)")
-        if st.session_state.sizes_history: st.dataframe(st.session_state.sizes_history, use_container_width=True)
-        else: st.info("No production sizes recorded.")
+        if st.session_state.sizes_history: 
+            st.dataframe(st.session_state.sizes_history, use_container_width=True)
+        else: 
+            st.info("No production sizes recorded.")
 
     with col_summary2:
         st.subheader("🚚 Institute Shipments")
-        if st.session_state.institute_shipments: st.dataframe(st.session_state.institute_shipments, use_container_width=True)
-        else: st.info("No shipments recorded.")
+        if st.session_state.institute_shipments: 
+            st.dataframe(st.session_state.institute_shipments, use_container_width=True)
+        else: 
+            st.info("No shipments recorded.")
             
         st.subheader("🎨 Mockups Status")
-        if st.session_state.mockups_v2_history: st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)
-        else: st.info("No mockups added.")
+        if st.session_state.mockups_v2_history: 
+            st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)
+        else: 
+            st.info("No mockups added.")
 
     st.markdown("---")
     st.subheader("💾 Cloud & Export Options")
@@ -275,7 +327,6 @@ with tab6:
             st.success(f"Project '{project_id}' securely stored in Cloud Database!")
             
     with col_btn2:
-        # CORREÇÃO CRÍTICA: window.parent.print() força o navegador a capturar toda a página visível externa
         if st.button("🖨️ Export PDF / Print Report", key="t6_print_pdf_btn"):
             st.components.v1.html(
                 """
