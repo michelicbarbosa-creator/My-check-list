@@ -136,11 +136,9 @@ with tab4:
         input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
-        # --- NOVOS CAMPOS ADICIONADOS AQUI ---
         input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
         input_parti_fabric = st.text_input("PARTI FABRIC", value="", key="t4_parti_fab")
         input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key="t4_num_roll_ref")
-        # -------------------------------------
 
         if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
             st.session_state.sizes_history.append({
@@ -148,9 +146,9 @@ with tab4:
                 "Qty": input_size_qty, 
                 "Size": input_size, 
                 "Date": str(input_size_date),
-                "Number Roll Fabric": input_num_roll_fabric,  # Guarda o novo campo
-                "Lot Fabric": input_parti_fabric,          # Guarda o novo campo
-                "Number Roll Reflex": input_num_roll_reflex   # Guarda o novo campo
+                "Number Roll Fabric": input_num_roll_fabric,
+                "Parti Fabric": input_parti_fabric,
+                "Number Roll Reflex": input_num_roll_reflex
             })
             st.success("Size log entry recorded!")
             
@@ -178,7 +176,15 @@ with tab4:
             st.success("Shipment entry recorded!")
             
         if st.session_state.institute_shipments:
-            st.dataframe(st.session_state.institute_shipments, use_container_width=True)
+            # USANDO O DATA_EDITOR: Agora pode clicar na célula do Status na tabela e alterá-la livremente!
+            edited_shipments = st.data_editor(
+                st.session_state.institute_shipments, 
+                use_container_width=True,
+                key="editable_shipments_table"
+            )
+            # Atualiza a memória global com a alteração feita diretamente na tabela
+            st.session_state.institute_shipments = edited_shipments
+
 
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
