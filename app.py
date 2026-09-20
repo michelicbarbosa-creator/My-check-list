@@ -135,12 +135,22 @@ with tab4:
         input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
         input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
+        
+        # --- NOVOS CAMPOS ADICIONADOS AQUI ---
+        input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
+        input_parti_fabric = st.text_input("PARTI FABRIC", value="", key="t4_parti_fab")
+        input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key="t4_num_roll_ref")
+        # -------------------------------------
+
         if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
             st.session_state.sizes_history.append({
                 "Order Number": input_order_num, 
                 "Qty": input_size_qty, 
                 "Size": input_size, 
-                "Date": str(input_size_date)
+                "Date": str(input_size_date),
+                "Number Roll Fabric": input_num_roll_fabric,  # Guarda o novo campo
+                "Parti Fabric": input_parti_fabric,          # Guarda o novo campo
+                "Number Roll Reflex": input_num_roll_reflex   # Guarda o novo campo
             })
             st.success("Size log entry recorded!")
             
@@ -169,6 +179,7 @@ with tab4:
             
         if st.session_state.institute_shipments:
             st.dataframe(st.session_state.institute_shipments, use_container_width=True)
+
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
     st.header("Sample Mockups Configuration (V2)")
@@ -225,7 +236,7 @@ with tab6:
         else:
             st.info("No materials added yet.")
             
-        st.subheader("📐 Production Sizes")
+        st.subheader("📐 Production Sizes (with Roll Info)")
         if st.session_state.sizes_history:
             st.dataframe(st.session_state.sizes_history, use_container_width=True)
         else:
@@ -265,7 +276,7 @@ with tab6:
             "label_status": label_status
         },
         "materials": st.session_state.materials_list,
-        "production_sizes": st.session_state.sizes_history,
+        "production_sizes_and_rolls": st.session_state.sizes_history,  # Exporta o histórico atualizado com rolos
         "shipments": st.session_state.institute_shipments,
         "mockups": st.session_state.mockups_v2_history
     }
