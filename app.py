@@ -94,7 +94,7 @@ with tab2:
     st.subheader("Add Material Item")
     material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"], key="t2_mat_type")
     doc_art_name = st.text_input("ARTICLE NAME (for this material)", value=article_name_t1, key="t2_art_name")
-    doc_art_num = st.text_input("ARTICLE NUMBER", value="ART-9922", key="t2_art_num")
+    doc_art_num = st.text_input("ARTICLE NUMBER", value=" ", key="t2_art_num")
     
     col1, col2 = st.columns(2)
     with col1: oekotex = st.checkbox("OEKO-TEX Compliance", key="t2_oeko")
