@@ -7,46 +7,6 @@ import os
 # Configuração Principal do Programa com Identidade SPILAG
 st.set_page_config(page_title="SPILAG - Certification Checklist", layout="wide")
 
-# ESTILIZAÇÃO VISUAL CORPORATIVA (Vermelho SPILAG #E32119 e Azul SPILAG #00519E)
-st.markdown(
-    """
-    <style>
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        font-size: 16px;
-        font-weight: bold;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #E32119 !important;
-        border-bottom-color: #E32119 !important;
-    }
-    h1, h2, h3 {
-        color: #00519E !important;
-    }
-    div.stButton > button:first-child {
-        background-color: #00519E;
-        color: white;
-        border-radius: 6px;
-    }
-    div.stButton > button:first-child:hover {
-        background-color: #E32119;
-        color: white;
-        border-color: #E32119;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Exibição do Logo no Topo Centralizado
-col_logo_1, col_logo_2, col_logo_3 = st.columns([1,2,1])
-with col_logo_2:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", use_container_width=True)
-    else:
-        st.write("<h2 style='text-align:center; color:#E32119;'>🔺 SPILAG AG</h2>", unsafe_allow_html=True)
-
-st.markdown("<h1 style='text-align: center; margin-top: -10px;'>📋 Certification Checklist Program</h1>", unsafe_allow_html=True)
-
 # BANCO DE DADOS LOCAL/NUVEM SIMPLIFICADO
 DB_FILE = "projects_database.json"
 
@@ -70,8 +30,10 @@ def delete_project_from_db(project_id):
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(projects, f, indent=4, ensure_ascii=False)
 
-# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL TOTALMENTE EM BRANCO
+# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL CONTROLADA POR GERAÇÃO RESTRITA
 if 'generation_id' not in st.session_state: st.session_state['generation_id'] = 0
+if 'active_tab_index' not in st.session_state: st.session_state['active_tab_index'] = 0
+
 if 'materials_list' not in st.session_state: st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state: st.session_state.sizes_history = []
 if 'institute_shipments' not in st.session_state: st.session_state.institute_shipments = []
@@ -82,6 +44,24 @@ if 't1_f_num' not in st.session_state: st.session_state['t1_f_num'] = ""
 if 't1_m_name' not in st.session_state: st.session_state['t1_m_name'] = ""
 if 't1_art' not in st.session_state: st.session_state['t1_art'] = ""
 if 't1_bom_notes' not in st.session_state: st.session_state['t1_bom_notes'] = ""
+if 't1_cert' not in st.session_state: st.session_state['t1_cert'] = "NEW CERTIFICATION"
+if 't1_oeti' not in st.session_state: st.session_state['t1_oeti'] = False
+if 't1_testex' not in st.session_state: st.session_state['t1_testex'] = False
+if 't1_hoh' not in st.session_state: st.session_state['t1_hoh'] = False
+if 't1_add_bom' not in st.session_state: st.session_state['t1_add_bom'] = False
+
+if 't3_splag' not in st.session_state: st.session_state['t3_splag'] = "NO "
+if 't3_conf' not in st.session_state: st.session_state['t3_conf'] = "NO "
+if 't3_chart' not in st.session_state: st.session_state['t3_chart'] = "NO "
+if 't3_check' not in st.session_state: st.session_state['t3_check'] = "NO "
+if 't3_folder' not in st.session_state: st.session_state['t3_folder'] = "NO "
+if 't3_label' not in st.session_state: st.session_state['t3_label'] = "NO "
+
+if 't4_in_prog' not in st.session_state: st.session_state['t4_in_prog'] = "NO "
+if 't4_rev' not in st.session_state: st.session_state['t4_rev'] = "NO "
+if 't4_conf' not in st.session_state: st.session_state['t4_conf'] = "NO "
+if 't4_sent' not in st.session_state: st.session_state['t4_sent'] = "NO "
+if 't4_excel' not in st.session_state: st.session_state['t4_excel'] = "NO "
 
 status_options = ["NO ", "IN PROGRESS ", " OK "]
 
@@ -91,7 +71,25 @@ def check_expiration(exp_date):
     elif (exp_date - today).days == 1: return "🟨 WARNING: Expires Tomorrow!", "warning"
     else: return "🟩 Valid Document", "success"
 
-# --- PAINEL DE PESQUISA NA NUVEM ---
+# ESTILIZAÇÃO VISUAL CORPORATIVA (Vermelho SPILAG #E32119 e Azul SPILAG #00519E)
+st.markdown(
+    """
+    <style>
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+        font-size: 16px; font-weight: bold;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #E32119 !important; border-bottom-color: #E32119 !important;
+    }
+    h1, h2, h3 { color: #00519E !important; }
+    div.stButton > button:first-child { background-color: #00519E; color: white; border-radius: 6px; }
+    div.stButton > button:first-child:hover { background-color: #E32119; color: white; border-color: #E32119; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# --- PAINEL DE PESQUISA NA NUVEM NA BARRA LATERAL ---
 st.sidebar.header("🔍 Search & Load Project")
 all_saved_projects = load_all_projects()
 if all_saved_projects:
@@ -115,7 +113,6 @@ if all_saved_projects:
                 st.session_state['t1_art'] = info.get("article_name_t1", "")
                 st.session_state['t1_cert'] = info.get("certification_type", "NEW CERTIFICATION")
                 st.session_state['t1_bom_notes'] = info.get("bom_notes", "")
-                
                 st.session_state['t1_oeti'] = "OETI" in info.get("institutes", [])
                 st.session_state['t1_testex'] = "TESTEX" in info.get("institutes", [])
                 st.session_state['t1_hoh'] = "HOHENSTEIN" in info.get("institutes", [])
@@ -135,6 +132,9 @@ if all_saved_projects:
                 st.session_state['t4_conf'] = garment.get("confirmed", "NO ")
                 st.session_state['t4_sent'] = garment.get("sent_oeti", "NO ")
                 st.session_state['t4_excel'] = garment.get("entered_excel", "NO ")
+                
+                st.session_state['active_tab_index'] = 0
+                st.session_state['generation_id'] += 1
                 st.success(f"Loaded: {selected_proj}")
                 st.rerun()
         with col_side2:
@@ -146,6 +146,10 @@ else:
     st.sidebar.info("No projects saved in cloud database yet.")
 
 if st.sidebar.button("➕ Start New Project Blank"):
+    for key in list(st.session_state.keys()):
+        if key not in ['generation_id', 'active_tab_index']:
+            del st.session_state[key]
+            
     st.session_state.materials_list = []
     st.session_state.sizes_history = []
     st.session_state.institute_shipments = []
@@ -155,19 +159,45 @@ if st.sidebar.button("➕ Start New Project Blank"):
     st.session_state['t1_m_name'] = ""
     st.session_state['t1_art'] = ""
     st.session_state['t1_bom_notes'] = ""
+    st.session_state['t1_cert'] = "NEW CERTIFICATION"
     st.session_state['t1_oeti'] = False
     st.session_state['t1_testex'] = False
     st.session_state['t1_hoh'] = False
     st.session_state['t1_add_bom'] = False
+    
+    st.session_state['t3_splag'] = "NO "
+    st.session_state['t3_conf'] = "NO "
+    st.session_state['t3_chart'] = "NO "
+    st.session_state['t3_check'] = "NO "
+    st.session_state['t3_folder'] = "NO "
+    st.session_state['t3_label'] = "NO "
+    
+    st.session_state['t4_in_prog'] = "NO "
+    st.session_state['t4_rev'] = "NO "
+    st.session_state['t4_conf'] = "NO "
+    st.session_state['t4_sent'] = "NO "
+    st.session_state['t4_excel'] = "NO "
+
+    st.session_state['active_tab_index'] = 0
     st.session_state['generation_id'] += 1
     st.rerun()
 
 gen = st.session_state['generation_id']
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+# Exibição do Logo no Topo Centralizado
+col_logo_1, col_logo_2, col_logo_3 = st.columns(3)
+with col_logo_2:
+    if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
+    else: st.write("<h2 style='text-align:center; color:#E32119;'>🔺 SPILAG AG</h2>", unsafe_allow_html=True)
+
+st.markdown("<h1 style='text-align: center; margin-top: -10px;'>📋 Certification Checklist Program</h1>", unsafe_allow_html=True)
+
+tabs_labels = [
     "1. Project Info", "2. Documents ", "3. Technical Documentation", 
     "4. Sample Garment ", "5. Sample Mockups ", "6. Preview & Finalisation"
-])
+]
+tabs = st.tabs(tabs_labels)
+tab1, tab2, tab3, tab4, tab5, tab6 = tabs
 # ================= TAB 1: PROJECT INFO =================
 with tab1:
     st.header("Project Identification")
@@ -181,28 +211,28 @@ with tab1:
     st.session_state['t1_m_name'] = model_name
     st.session_state['t1_art'] = article_name_t1
     
-    cert_idx = ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"].index(st.session_state.get('t1_cert', "NEW CERTIFICATION")) if st.session_state.get('t1_cert', "NEW CERTIFICATION") in ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"] else 0
+    cert_idx = ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"].index(st.session_state['t1_cert']) if st.session_state['t1_cert'] in ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"] else 0
     cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"], index=cert_idx, key=f"t1_cert_input_{gen}")
     st.session_state['t1_cert'] = cert_type
     
     st.markdown("---")
     st.subheader("🏛️ TARGET CERTIFICATION INSTITUTE")
-    inst_oeti = st.checkbox("OETI", value=st.session_state.get('t1_oeti', False), key=f"t1_oeti_input_{gen}")
-    inst_testex = st.checkbox("TESTEX", value=st.session_state.get('t1_testex', False), key=f"t1_testex_input_{gen}")
-    inst_hohenstein = st.checkbox("HOHENSTEIN", value=st.session_state.get('t1_hoh', False), key=f"t1_hoh_input_{gen}")
+    inst_oeti = st.checkbox("OETI", value=st.session_state['t1_oeti'], key=f"t1_oeti_input_{gen}")
+    inst_testex = st.checkbox("TESTEX", value=st.session_state['t1_testex'], key=f"t1_testex_input_{gen}")
+    inst_hohenstein = st.checkbox("HOHENSTEIN", value=st.session_state['t1_hoh'], key=f"t1_hoh_input_{gen}")
     
     st.session_state['t1_oeti'] = inst_oeti
     st.session_state['t1_testex'] = inst_testex
     st.session_state['t1_hoh'] = inst_hohenstein
     
     st.markdown("---")
-    add_bom = st.checkbox("ADD BOM (Bill of Materials)", value=st.session_state.get('t1_add_bom', False), key=f"t1_add_bom_input_{gen}")
+    add_bom = st.checkbox("ADD BOM (Bill of Materials)", value=st.session_state['t1_add_bom'], key=f"t1_add_bom_input_{gen}")
     st.session_state['t1_add_bom'] = add_bom
     bom_notes = st.text_area("BOM NOTES / REVISIONS", value=st.session_state['t1_bom_notes'], key=f"t1_bom_notes_input_{gen}")
     st.session_state['t1_bom_notes'] = bom_notes
 # ================= TAB 2: DOCUMENTS =================
 with tab2:
-    st.header("Materials & Document Expiration")
+    st.header("Materials ")
     st.subheader("Add Material Item")
     material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"], key=f"t2_mat_type_{gen}")
     
@@ -236,6 +266,7 @@ with tab2:
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
     st.header("Technical Documentation Status")
+    
     def get_status_idx(session_key):
         val = st.session_state.get(session_key, "NO ")
         return status_options.index(val) if val in status_options else 0
@@ -294,6 +325,7 @@ with tab4:
                 "Number Roll Fabric": input_num_roll_fabric, "Lot Fabric": input_lot_fabric, "Number Roll Reflex": input_num_roll_reflex
             })
             st.success("Size log entry recorded!")
+            st.rerun()
             
         edited_sizes = st.data_editor(st.session_state.sizes_history, use_container_width=True, num_rows="dynamic", key=f"editable_sizes_table_{gen}")
         st.session_state.sizes_history = edited_sizes
@@ -312,17 +344,18 @@ with tab4:
                 "Order Number": ship_order, "Qty Sent": ship_qty, "Size": ship_size, "Main Fabric": ship_fabric, "Shipment Date": str(ship_date), "Status": ship_status
             })
             st.success("Shipment entry recorded!")
+            st.rerun()
             
         edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, num_rows="dynamic", key=f"editable_shipments_table_{gen}")
         st.session_state.institute_shipments = edited_shipments
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
-    st.header("Sample Mockups Configuration (V2)")
+    st.header("Sample Mockups")
     st.subheader("Add Mockup Details")
     
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value="", key=f"t5_part_{gen}")
+        mockup_part = st.text_input("MOCKUP ART", value="", key=f"t5_part_{gen}")
         mockup_material = st.text_input("MATERIAL USED", value="", key=f"t5_mat_{gen}")
         mockup_ship_date = st.date_input("SHIPMENT DATE TO INSTITUTE", datetime.date.today(), key=f"t5_ship_date_{gen}")
     with col_m2:
@@ -336,6 +369,7 @@ with tab5:
             "Shipment Date": str(mockup_ship_date), "Approval": mockup_approval
         })
         st.success("Mockup added successfully!")
+        st.rerun()
         
     st.markdown("---")
     st.subheader("📋 Registered Mockups")
@@ -345,74 +379,24 @@ with tab5:
 with tab6:
     st.header("Project Overview & Final Summary")
     
-    # --- ESTILIZAÇÃO CSS PROFISSIONAL - COMPACTAÇÃO ANTI-QUEBRA DE PÁGINA ---
     st.markdown(
         """
         <style>
         @media print {
-            /* 1. Esconde menus de navegação do Streamlit, barras laterais e botões */
             iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"], [data-testid="stHeaderBlock"] {
                 display: none !important;
             }
-            /* 2. Configuração da folha com aproveitamento máximo de espaço horizontal */
-            @page { 
-                size: A4 landscape; 
-                margin: 0.6cm !important; 
-            }
-            /* 3. CORREÇÃO CRÍTICA DO LOGO ISOLADO: Impede quebras de página no topo */
+            @page { size: A4 landscape; margin: 0.6cm !important; }
             [data-testid="stImage"], [data-testid="stElementContainer"], .element-container {
-                page-break-after: avoid !important;
-                page-break-inside: avoid !important;
-                display: block !important;
+                page-break-after: avoid !important; page-break-inside: avoid !important; display: block !important;
             }
-            [data-testid="stImage"] img, img {
-                max-width: 140px !important;
-                height: auto !important;
-                margin: 0 auto !important;
-                display: block !important;
-            }
-            /* 4. Ajuste global do tamanho real mantendo os blocos unidos */
-            .main .block-container { 
-                padding-top: 0cm !important; 
-                padding-bottom: 0cm !important; 
-                max-width: 100% !important; 
-                transform: scale(0.85) !important; 
-                transform-origin: top left !important;
-                margin-top: -20px !important; 
-            }
-            /* 5. Força as tabelas e colunas a empilharem sem saltar de página à toa */
-            [data-testid="stHorizontalBlock"] { 
-                display: block !important; 
-                float: none !important; 
-                width: 100% !important; 
-                page-break-inside: avoid !important;
-                page-break-after: auto !important;
-            }
-            [data-testid="column"] { 
-                display: block !important; 
-                width: 100% !important; 
-                max-width: 100% !important; 
-                float: none !important; 
-                padding: 0 !important; 
-                margin-bottom: 15px !important; 
-                page-break-inside: avoid !important; 
-            }
-            /* 6. Ajuste compacto das tabelas de dados */
-            .stDataFrame, table { 
-                width: 100% !important; 
-                margin-top: 2px !important; 
-                margin-bottom: 5px !important; 
-            }
-            h1, h2, h3 { 
-                color: #00519E !important; 
-                margin-top: 8px !important; 
-                margin-bottom: 4px !important;
-                page-break-after: avoid !important; 
-                page-break-before: avoid !important;
-            }
-            p, span, div, text {
-                page-break-inside: avoid !important;
-            }
+            [data-testid="stImage"] img, img { max-width: 140px !important; height: auto !important; margin: 0 auto !important; display: block !important; }
+            .main .block-container { padding-top: 0cm !important; padding-bottom: 0cm !important; max-width: 100% !important; transform: scale(0.85) !important; transform-origin: top left !important; margin-top: -20px !important; }
+            [data-testid="stHorizontalBlock"] { display: block !important; float: none !important; width: 100% !important; page-break-inside: avoid !important; page-break-after: auto !important; }
+            [data-testid="column"] { display: block !important; width: 100% !important; max-width: 100% !important; float: none !important; padding: 0 !important; margin-bottom: 15px !important; page-break-inside: avoid !important; }
+            .stDataFrame, table { width: 100% !important; margin-top: 2px !important; margin-bottom: 5px !important; }
+            h1, h2, h3 { color: #00519E !important; margin-top: 8px !important; margin-bottom: 4px !important; page-break-after: avoid !important; page-break-before: avoid !important; }
+            p, span, div, text { page-break-inside: avoid !important; }
         }
         </style>
         """,
@@ -420,7 +404,6 @@ with tab6:
     )
 
     st.subheader("📌 General Project Info")
-    
     p_name_view = st.session_state.get('t1_p_name', '')
     f_num_view = st.session_state.get('t1_f_num', '')
     m_name_view = st.session_state.get('t1_m_name', '')
@@ -460,7 +443,6 @@ with tab6:
 
     st.markdown("---")
     st.subheader("💾 Cloud & Export Options")
-    
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     
     final_data = {
@@ -514,4 +496,3 @@ with tab6:
             file_name=f"checklist_{f_num_view if f_num_view else 'export'}.json", mime="application/json",
             key=f"t6_json_dl_btn_{gen}"
         )
-
