@@ -149,7 +149,7 @@ with tab4:
                 "Size": input_size, 
                 "Date": str(input_size_date),
                 "Number Roll Fabric": input_num_roll_fabric,  # Guarda o novo campo
-                "Parti Fabric": input_parti_fabric,          # Guarda o novo campo
+                "Lot Fabric": input_parti_fabric,          # Guarda o novo campo
                 "Number Roll Reflex": input_num_roll_reflex   # Guarda o novo campo
             })
             st.success("Size log entry recorded!")
