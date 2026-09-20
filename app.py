@@ -345,19 +345,61 @@ with tab5:
 with tab6:
     st.header("Project Overview & Final Summary")
     
+    # --- ESTILIZAÇÃO CSS DE ALTA COMPACTAÇÃO REESTRUTURADA PARA IMPRESSÃO ---
     st.markdown(
         """
         <style>
         @media print {
+            /* Esconde menus de navegação do Streamlit, barras laterais e botões */
             iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"] {
                 display: none !important;
             }
-            @page { size: A4 landscape; margin: 1.5cm; }
-            .main .block-container { padding-top: 0cm !important; padding-bottom: 0cm !important; max-width: 100% !important; }
-            [data-testid="stHorizontalBlock"] { display: block !important; float: none !important; width: 100% !important; }
-            [data-testid="column"] { display: block !important; width: 100% !important; max-width: 100% !important; float: none !important; padding: 0 !important; margin-bottom: 35px !important; page-break-inside: avoid; }
-            .stDataFrame, table { width: 100% !important; margin-top: 5px !important; margin-bottom: 15px !important; }
-            h1, h2, h3 { color: #00519E !important; margin-top: 20px !important; page-break-after: avoid; }
+            /* Configuração da folha com aproveitamento máximo de espaço horizontal */
+            @page { 
+                size: A4 landscape; 
+                margin: 0.5cm !important; 
+            }
+            /* CORREÇÃO DO ESPAÇO EM BRANCO: Reduz o tamanho real mantendo os blocos juntos */
+            .main .block-container { 
+                padding-top: 0cm !important; 
+                padding-bottom: 0cm !important; 
+                max-width: 100% !important; 
+                transform: scale(0.82) !important; /* Encolhe o relatório para caber em menos folhas */
+                transform-origin: top left !important;
+                margin-top: -30px !important; /* Elimina o espaço vazio do topo no papel */
+            }
+            /* Junta as colunas paralelas do monitor para empilharem sem quebrar página */
+            [data-testid="stHorizontalBlock"] { 
+                display: block !important; 
+                float: none !important; 
+                width: 100% !important; 
+                page-break-inside: avoid !important;
+            }
+            [data-testid="column"] { 
+                display: block !important; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                float: none !important; 
+                padding: 0 !important; 
+                margin-bottom: 10px !important; /* Menos espaço entre as tabelas */
+                page-break-inside: avoid !important; 
+            }
+            /* Ajuste compacto das tabelas de dados */
+            .stDataFrame, table { 
+                width: 100% !important; 
+                margin-top: 2px !important; 
+                margin-bottom: 5px !important; 
+            }
+            h1, h2, h3 { 
+                color: #00519E !important; 
+                margin-top: 8px !important; 
+                margin-bottom: 3px !important;
+                page-break-after: avoid !important; 
+            }
+            /* Evita que pequenos parágrafos criem uma folha nova sozinhos */
+            p, span, div {
+                page-break-inside: avoid !important;
+            }
         }
         </style>
         """,
@@ -365,6 +407,7 @@ with tab6:
     )
 
     st.subheader("📌 General Project Info")
+    
     p_name_view = st.session_state.get('t1_p_name', '')
     f_num_view = st.session_state.get('t1_f_num', '')
     m_name_view = st.session_state.get('t1_m_name', '')
