@@ -138,8 +138,17 @@ with tab4:
         input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
-            st.session_state.sizes_history.append({"Order Number": input_order_num, "Qty": input_size_qty, "Size": input_size, "Date": str(input_size_date)})
+            st.session_state.sizes_history.append({
+                "Order Number": input_order_num, 
+                "Qty": input_size_qty, 
+                "Size": input_size, 
+                "Date": str(input_size_date)
+            })
             st.success("Size log entry recorded!")
+            st.rerun()
+            
+        if st.session_state.sizes_history:
+            st.dataframe(st.session_state.sizes_history, use_container_width=True)
 
     with col_ship:
         st.subheader("🚚 Institute Shipment ")
@@ -149,35 +158,45 @@ with tab4:
         ship_fabric = st.text_input("MAIN FABRIC", value="100% Polyester", key="t4_sh_fab")
         ship_date = st.date_input("SHIPMENT DATE", datetime.date.today(), key="t4_sh_dt")
         ship_status = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t4_sh_st")
+        
+        # CONTINUAÇÃO E CORREÇÃO DO CÓDIGO INTERROMPIDO:
         if st.button("➕ Add Shipment to Institute", key="t4_add_sh_btn"):
-            st.session_state.institute_shipments.append({"Order": ship_order, "Qty Sent": ship_qty, "Size": ship_size, "Main Fabric": ship_fabric, "Date": str(ship_date), "Status": ship_status})
-            st.success("Shipment registered successfully!")
-
-    st.markdown("---")
-    st.subheader("📋 Production History")
-    if st.session_state.sizes_history:
-        st.dataframe(st.session_state.sizes_history, use_container_width=True)
-        if st.button("🗑️ Clear Size History", key="t4_clear_sz"):
-            st.session_state.sizes_history = []
+            st.session_state.institute_shipments.append({
+                "Order Number": ship_order,
+                "Qty Sent": ship_qty,
+                "Size": ship_size,
+                "Main Fabric": ship_fabric,
+                "Shipment Date": str(ship_date),
+                "Status": ship_status
+            })
+            st.success("Shipment entry recorded!")
             st.rerun()
-
-    st.markdown("---")
-    st.subheader("🚚 History of Registered Institute Shipments")
-    if st.session_state.institute_shipments:
-        total_pieces_sent = sum(item["Qty Sent"] for item in st.session_state.institute_shipments)
-        st.metric(label="📊 Total Pieces Sent to Institutes", value=f"{total_pieces_sent} units")
-        st.dataframe(st.session_state.institute_shipments, use_container_width=True)
-        if st.button("🗑️ Clear Shipment History", key="t4_clear_sh"):
-            st.session_state.institute_shipments = []
-            st.rerun()
+            
+        if st.session_state.institute_shipments:
+            st.dataframe(st.session_state.institute_shipments, use_container_width=True)
 
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
-    st.header("Sample Mockups Configuration & Tracking")
-    col_mock1, col_mock2 = st.columns(2)
+    st.header("Sample Mockups Configuration (V2)")
+    st.subheader("Add Mockup Details")
     
-    with col_mock1:
-        st.subheader("📝 Mockup Production Details")
-        mockup_article = st.text_input("ARTICLE OF MOCKUPS", value="Mock-UX Fabric", key="m5_art")
-        mock_order_num = st.text_input("ORDER NUMBER", value="ORD-2026", key="m5_ord")
-        fabric_used = st.text_input("FABRIC USED (Tecidos)", value="Cotton Blend 230g", key="m5_fab")
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value="Main Seam", key="t5_part")
+        mockup_material = st.text_input("MATERIAL USED", value="Reflective Tape Type A", key="t5_mat")
+    with col_m2:
+        mockup_qty = st.number_input("MOCKUP QTY", min_value=1, value=1, key="t5_qty")
+        mockup_status = st.selectbox("MOCKUP STATUS", status_options, index=1, key="t5_status")
+        
+    if st.button("➕ Add Mockup to Project", key="t5_add_btn"):
+        st.session_state.mockups_v2_history.append({
+            "Component/Part": mockup_part,
+            "Material": mockup_material,
+            "Qty": mockup_qty,
+            "Status": mockup_status
+        })
+Use o código com cuidado.st.success("Mockup added successfully!")st.rerun()st.markdown("---")st.subheader("📋 Registered Mockups")if st.session_state.mockups_v2_history:st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)if st.button("🗑️ Clear Mockups List", key="t5_clear_btn"):st.session_state.mockups_v2_history = []st.rerun()================= TAB 6: PREVIEW & FINALISATION =================with tab6:st.header("Project Overview & Final Summary")# Compilação dos dados gerais da Tab 1st.subheader("📌 General Project Info")st.write(f"Project Name: {st.session_state.get('t1_p_name', project_name)}")st.write(f"Folder Number: {st.session_state.get('t1_f_num', folder_number)}")st.write(f"Model: {st.session_state.get('t1_m_name', model_name)}")st.write(f"Type: {st.session_state.get('t1_cert', cert_type)}")# Institutos selecionadosinstitutes = []if st.session_state.get('t1_oeti'): institutes.append("OETI")if st.session_state.get('t1_testex'): institutes.append("TESTEX")if st.session_state.get('t1_hoh'): institutes.append("HOHENSTEIN")st.write(f"Target Institutes: {', '.join(institutes) if institutes else 'None Selected'}")st.markdown("---")# Exibição consolidada de todas as tabelas e históricos de dadoscol_summary1, col_summary2 = st.columns(2)with col_summary1:st.subheader("🗒️ Materials & Expiration Summary")if st.session_state.materials_list:st.dataframe(st.session_state.materials_list, use_container_width=True)else:st.info("No materials added yet.")st.subheader("📐 Production Sizes")if st.session_state.sizes_history:st.dataframe(st.session_state.sizes_history, use_container_width=True)else:st.info("No production sizes recorded.")with col_summary2:st.subheader("🚚 Institute Shipments")if st.session_state.institute_shipments:st.dataframe(st.session_state.institute_shipments, use_container_width=True)else:st.info("No shipments recorded.")st.subheader("🎨 Mockups Status")if st.session_state.mockups_v2_history:st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)else:st.info("No mockups added.")st.markdown("---")st.subheader("💾 Export Options")# Geração de JSON estruturado para download/salvamento do checklist completofinal_data = {"project_info": {"name": st.session_state.get('t1_p_name', project_name),"folder": st.session_state.get('t1_f_num', folder_number),"model": st.session_state.get('t1_m_name', model_name),"certification_type": st.session_state.get('t1_cert', cert_type),"institutes": institutes,"bom_notes": st.session_state.get('t1_bom_notes', bom_notes)},"technical_documentation": {"splag": t_splag,"confirmed": t_confirmed,"measurement_chart": m_chart,"measurement_check": m_check,"saved_folder": saved_folder,"label_status": label_status},"materials": st.session_state.materials_list,"production_sizes": st.session_state.sizes_history,"shipments": st.session_state.institute_shipments,"mockups": st.session_state.mockups_v2_history}json_string = json.dumps(final_data, indent=4, ensure_ascii=False)st.download_button(label="📥 Download Checklist Data (JSON)",data=json_string,file_name=f"checklist_{st.session_state.get('t1_f_num', 'export')}.json",mime="application/json")
+<FollowUp>
+Deseja adicionar alguma funcionalidade extra a este script, como o **salvamento automático numa base de dados SQLite** (já importada no topo do código) ou a **exportação dos relatórios diretamente para formato Excel (.xlsx) ou PDF**?
+</FollowUp>
+As respostas de IA podem incluir erros. Saiba mais
