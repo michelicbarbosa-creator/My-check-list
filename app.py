@@ -198,30 +198,41 @@ with tab4:
         if st.session_state.institute_shipments:
             edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, key="editable_shipments_table")
             st.session_state.institute_shipments = edited_shipments
-
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
-    st.header("Sample Mockups")
+    st.header("Sample Mockups Configuration (V2)")
     st.subheader("Add Mockup Details")
     
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        mockup_part = st.text_input("MOCKUP (article)", value=" ", key="t5_part")
-        mockup_material = st.text_input("MATERIAL USED", value=" ", key="t5_mat")
+        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value="Main Seam", key="t5_part")
+        mockup_material = st.text_input("MATERIAL USED", value="Reflective Tape Type A", key="t5_mat")
+        # NOVO CAMPO: Data de envio do Mockup
+        mockup_ship_date = st.date_input("SHIPMENT DATE TO INSTITUTE", datetime.date.today(), key="t5_ship_date")
     with col_m2:
         mockup_qty = st.number_input("MOCKUP QTY", min_value=1, value=1, key="t5_qty")
         mockup_status = st.selectbox("MOCKUP STATUS", status_options, index=1, key="t5_status")
+        # NOVO CAMPO: Estado de Aprovação do Mockup
+        mockup_approval = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t5_approval")
         
     if st.button("➕ Add Mockup to Project", key="t5_add_btn"):
         st.session_state.mockups_v2_history.append({
-            "Component/Part": mockup_part, "Material": mockup_material, "Qty": mockup_qty, "Status": mockup_status
+            "Component/Part": mockup_part,
+            "Material": mockup_material,
+            "Qty": mockup_qty,
+            "Status": mockup_status,
+            "Shipment Date": str(mockup_ship_date), # Guarda a nova data
+            "Approval": mockup_approval             # Guarda o novo estado
         })
         st.success("Mockup added successfully!")
         
     st.markdown("---")
     st.subheader("📋 Registered Mockups")
     if st.session_state.mockups_v2_history:
-        st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)
+        # Transforma a tabela em editável para que possa alterar o Status ou a Aprovação com 2 cliques
+        edited_mockups = st.data_editor(st.session_state.mockups_v2_history, use_container_width=True, key="editable_mockups_table")
+        st.session_state.mockups_v2_history = edited_mockups
+        
         if st.button("🗑️ Clear Mockups List", key="t5_clear_btn"):
             st.session_state.mockups_v2_history = []
 # ================= TAB 6: PREVIEW & FINALISATION =================
@@ -233,13 +244,11 @@ with tab6:
         """
         <style>
         @media print {
-            /* Esconde menus de navegação do Streamlit, barras laterais e botões */
             iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"] {
                 display: none !important;
             }
-            /* Configuração da página e margens para evitar cortes */
             @page {
-                size: A4 landscape; /* Força o papel a ficar na horizontal de forma automática */
+                size: A4 landscape;
                 margin: 1.5cm;
             }
             .main .block-container {
@@ -247,7 +256,6 @@ with tab6:
                 padding-bottom: 0cm !important;
                 max-width: 100% !important;
             }
-            /* CORREÇÃO DA SOBREPOSIÇÃO: Força os blocos a quebrarem em linhas independentes com espaço livre */
             [data-testid="stHorizontalBlock"] {
                 display: block !important;
                 float: none !important;
@@ -259,10 +267,9 @@ with tab6:
                 max-width: 100% !important;
                 float: none !important;
                 padding: 0 !important;
-                margin-bottom: 35px !important; /* Espaço de segurança para não encavalar o título seguinte */
+                margin-bottom: 35px !important;
                 page-break-inside: avoid;
             }
-            /* Alinhamento perfeito das tabelas */
             .stDataFrame, table {
                 width: 100% !important;
                 margin-top: 5px !important;
@@ -292,8 +299,6 @@ with tab6:
     st.write(f"**Target Institutes:** {', '.join(institutes) if institutes else 'None Selected'}")
     
     st.markdown("---")
-    
-    # No ecrã mantém-se em duas colunas, mas o CSS corrigido acima organiza em lista limpa na impressão
     col_summary1, col_summary2 = st.columns(2)
     
     with col_summary1:
@@ -350,14 +355,7 @@ with tab6:
             
     with col_btn2:
         if st.button("🖨️ Export PDF / Print Report", key="t6_print_pdf_btn"):
-            st.components.v1.html(
-                """
-                <script>
-                    window.parent.print();
-                </script>
-                """,
-                height=0,
-            )
+            st.components.v1.html("<script>window.parent.print();</script>", height=0)
             st.info("Opening system print dialog...")
             
     with col_btn3:
@@ -368,3 +366,4 @@ with tab6:
             file_name=f"checklist_{st.session_state.get('t1_f_num', 'export')}.json",
             mime="application/json"
         )
+
