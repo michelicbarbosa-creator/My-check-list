@@ -264,34 +264,50 @@ with tab6:
     st.markdown("---")
     st.subheader("💾 Export Options")
     
-    final_data = {
-        "project_info": {
-            "name": st.session_state.get('t1_p_name', project_name),
-            "folder": st.session_state.get('t1_f_num', folder_number),
-            "model": st.session_state.get('t1_m_name', model_name),
-            "certification_type": st.session_state.get('t1_cert', cert_type),
-            "institutes": institutes,
-            "bom_notes": st.session_state.get('t1_bom_notes', bom_notes)
-        },
-        "technical_documentation": {
-            "splag": t_splag,
-            "confirmed": t_confirmed,
-            "measurement_chart": m_chart,
-            "measurement_check": m_check,
-            "saved_folder": saved_folder,
-            "label_status": label_status
-        },
-        "materials": st.session_state.materials_list,
-        "production_sizes_and_rolls": st.session_state.sizes_history,  # Exporta o histórico atualizado com rolos
-        "shipments": st.session_state.institute_shipments,
-        "mockups": st.session_state.mockups_v2_history
-    }
+    # Criamos duas colunas para colocar os dois botões de exportação lado a lado
+    col_btn1, col_btn2 = st.columns(2)
     
-    json_string = json.dumps(final_data, indent=4, ensure_ascii=False)
-    
-    st.download_button(
-        label="📥 Download Checklist Data (JSON)",
-        data=json_string,
-        file_name=f"checklist_{st.session_state.get('t1_f_num', 'export')}.json",
-        mime="application/json"
-    )
+    with col_btn1:
+        # Botão 1: Exportar o Visual Idêntico ao Monitor (PDF)
+        if st.button("🖨️ Export PDF / Print Report", key="t6_print_pdf_btn"):
+            st.components.v1.html(
+                """
+                <script>
+                    window.print();
+                </script>
+                """,
+                height=0,
+            )
+            st.success("Print window opened! Select 'Save as PDF' to export with full graphics.")
+            
+    with col_btn2:
+        # Botão 2: Manter o download em formato de arquivo JSON bruto
+        final_data = {
+            "project_info": {
+                "name": st.session_state.get('t1_p_name', project_name),
+                "folder": st.session_state.get('t1_f_num', folder_number),
+                "model": st.session_state.get('t1_m_name', model_name),
+                "certification_type": st.session_state.get('t1_cert', cert_type),
+                "institutes": institutes,
+                "bom_notes": st.session_state.get('t1_bom_notes', bom_notes)
+            },
+            "technical_documentation": {
+                "splag": t_splag,
+                "confirmed": t_confirmed,
+                "measurement_chart": m_chart,
+                "measurement_check": m_check,
+                "saved_folder": saved_folder,
+                "label_status": label_status
+            },
+            "materials": st.session_state.materials_list,
+            "production_sizes_and_rolls": st.session_state.sizes_history,
+            "shipments": st.session_state.institute_shipments,
+            "mockups": st.session_state.mockups_v2_history
+        }
+        json_string = json.dumps(final_data, indent=4, ensure_ascii=False)
+        st.download_button(
+            label="📥 Download Checklist Data (JSON)",
+            data=json_string,
+            file_name=f"checklist_{st.session_state.get('t1_f_num', 'export')}.json",
+            mime="application/json"
+        )
