@@ -150,19 +150,25 @@ with tab4:
     
     with col_sizes:
         st.subheader("📦 Production ")
-        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value=" ", key="t4_sz_ord")
+        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="ORD-2026", key="t4_sz_ord")
         input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
-        input_size = st.text_input("SIZE ", value=" ", key="t4_sz_val")
+        input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
+        # Correção dos nomes das caixas de texto para bater certo com o dicionário
         input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
-        input_parti_fabric = st.text_input("Lot. FABRIC", value="", key="t4_parti_fab")
+        input_lot_fabric = st.text_input("LOT FABRIC", value="", key="t4_lot_fab")
         input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key="t4_num_roll_ref")
 
         if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
             st.session_state.sizes_history.append({
-                "Order Number": input_order_num, "Qty": input_size_qty, "Size": input_size, "Date": str(input_size_date),
-                "Number Roll Fabric": input_num_roll_fabric, "Lot. Fabric": input_lot_fabric, "Number Roll Reflex": input_num_roll_reflex
+                "Order Number": input_order_num, 
+                "Qty": input_size_qty, 
+                "Size": input_size, 
+                "Date": str(input_size_date),
+                "Number Roll Fabric": input_num_roll_fabric, 
+                "Lot Fabric": input_lot_fabric, 
+                "Number Roll Reflex": input_num_roll_reflex
             })
             st.success("Size log entry recorded!")
             
@@ -171,22 +177,28 @@ with tab4:
 
     with col_ship:
         st.subheader("🚚 Institute Shipment ")
-        ship_order = st.text_input("ORDER NUMBER", value=" ", key="t4_sh_ord")
+        ship_order = st.text_input("ORDER NUMBER", value="ORD-2026", key="t4_sh_ord")
         ship_qty = st.number_input("QUANTITY SENT", min_value=1, value=1, key="t4_sh_qty")
-        ship_size = st.text_input("SIZE", value=" ", key="t4_sh_sz")
-        ship_fabric = st.text_input("MAIN FABRIC", value=" ", key="t4_sh_fab")
+        ship_size = st.text_input("SIZE", value="L", key="t4_sh_sz")
+        ship_fabric = st.text_input("MAIN FABRIC", value="100% Polyester", key="t4_sh_fab")
         ship_date = st.date_input("SHIPMENT DATE", datetime.date.today(), key="t4_sh_dt")
         ship_status = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t4_sh_st")
         
         if st.button("➕ Add Shipment to Institute", key="t4_add_sh_btn"):
             st.session_state.institute_shipments.append({
-                "Order Number": ship_order, "Qty Sent": ship_qty, "Size": ship_size, "Main Fabric": ship_fabric, "Shipment Date": str(ship_date), "Status": ship_status
+                "Order Number": ship_order, 
+                "Qty Sent": ship_qty, 
+                "Size": ship_size, 
+                "Main Fabric": ship_fabric, 
+                "Shipment Date": str(ship_date), 
+                "Status": ship_status
             })
             st.success("Shipment entry recorded!")
             
         if st.session_state.institute_shipments:
             edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, key="editable_shipments_table")
             st.session_state.institute_shipments = edited_shipments
+
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
     st.header("Sample Mockups Configuration (V2)")
