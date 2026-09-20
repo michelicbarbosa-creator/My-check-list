@@ -275,9 +275,17 @@ with tab6:
             st.success(f"Project '{project_id}' securely stored in Cloud Database!")
             
     with col_btn2:
+        # CORREÇÃO CRÍTICA: window.parent.print() força o navegador a capturar toda a página visível externa
         if st.button("🖨️ Export PDF / Print Report", key="t6_print_pdf_btn"):
-            st.components.v1.html("<script>window.print();</script>", height=0)
-            st.success("Print window opened!")
+            st.components.v1.html(
+                """
+                <script>
+                    window.parent.print();
+                </script>
+                """,
+                height=0,
+            )
+            st.info("Opening system print dialog...")
             
     with col_btn3:
         json_string = json.dumps(final_data, indent=4, ensure_ascii=False)
@@ -287,4 +295,3 @@ with tab6:
             file_name=f"checklist_{st.session_state.get('t1_f_num', 'export')}.json",
             mime="application/json"
         )
-
