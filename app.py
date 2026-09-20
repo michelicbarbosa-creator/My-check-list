@@ -155,7 +155,6 @@ with tab4:
         input_size = st.text_input("SIZE (e.g., M, L, 42)", value="M", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
-        # Correção dos nomes das caixas de texto para bater certo com o dicionário
         input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
         input_lot_fabric = st.text_input("LOT FABRIC", value="", key="t4_lot_fab")
         input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key="t4_num_roll_ref")
@@ -173,7 +172,14 @@ with tab4:
             st.success("Size log entry recorded!")
             
         if st.session_state.sizes_history:
-            st.dataframe(st.session_state.sizes_history, use_container_width=True)
+            # Transformado em data_editor com num_rows="dynamic" para permitir APAGAR linhas da Produção
+            edited_sizes = st.data_editor(
+                st.session_state.sizes_history, 
+                use_container_width=True, 
+                num_rows="dynamic",
+                key="editable_sizes_table"
+            )
+            st.session_state.sizes_history = edited_sizes
 
     with col_ship:
         st.subheader("🚚 Institute Shipment ")
@@ -196,8 +202,17 @@ with tab4:
             st.success("Shipment entry recorded!")
             
         if st.session_state.institute_shipments:
-            edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, key="editable_shipments_table")
+            # Adicionado num_rows="dynamic" para permitir APAGAR linhas do Envio ao Instituto
+            edited_shipments = st.data_editor(
+                st.session_state.institute_shipments, 
+                use_container_width=True, 
+                num_rows="dynamic",
+                key="editable_shipments_table"
+            )
             st.session_state.institute_shipments = edited_shipments
+
+
+
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
     st.header("Sample Mockups Configuration (V2)")
