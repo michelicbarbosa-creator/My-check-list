@@ -308,10 +308,17 @@ with tab6:
     )
 
     st.subheader("📌 General Project Info")
-    st.write(f"**Project Name:** {st.session_state.get('t1_p_name', project_name)}")
-    st.write(f"**Folder Number:** {st.session_state.get('t1_f_num', folder_number)}")
-    st.write(f"**Model:** {st.session_state.get('t1_m_name', model_name)}")
-    st.write(f"**Type:** {st.session_state.get('t1_cert', cert_type)}")
+    
+    # CORREÇÃO CRÍTICA: Lê tudo da memória global com valores padrão de segurança
+    p_name_view = st.session_state.get('t1_p_name', 'Project Alpha')
+    f_num_view = st.session_state.get('t1_f_num', 'F-2026-001')
+    m_name_view = st.session_state.get('t1_m_name', 'Standard V1')
+    cert_type_view = st.session_state.get('t1_cert', 'NEW CERTIFICATION')
+    
+    st.write(f"**Project Name:** {p_name_view}")
+    st.write(f"**Folder Number:** {f_num_view}")
+    st.write(f"**Model:** {m_name_view}")
+    st.write(f"**Type:** {cert_type_view}")
     
     institutes = []
     if st.session_state.get('t1_oeti'): institutes.append("OETI")
@@ -355,10 +362,10 @@ with tab6:
     
     final_data = {
         "project_info": {
-            "name": st.session_state.get('t1_p_name', project_name),
-            "folder": st.session_state.get('t1_f_num', folder_number),
-            "model": st.session_state.get('t1_m_name', model_name),
-            "certification_type": st.session_state.get('t1_cert', cert_type),
+            "name": p_name_view,
+            "folder": f_num_view,
+            "model": m_name_view,
+            "certification_type": cert_type_view,
             "institutes": institutes,
             "bom_notes": st.session_state.get('t1_bom_notes', "")
         },
@@ -370,7 +377,7 @@ with tab6:
     
     with col_btn1:
         if st.button("☁️ Save Project to Cloud Database", key="t6_cloud_save"):
-            project_id = f"{st.session_state.get('t1_f_num', folder_number)} - {st.session_state.get('t1_p_name', project_name)}"
+            project_id = f"{f_num_view} - {p_name_view}"
             save_project_to_db(project_id, final_data)
             st.success(f"Project '{project_id}' securely stored in Cloud Database!")
             
@@ -384,7 +391,6 @@ with tab6:
         st.download_button(
             label="📥 Download JSON Backup",
             data=json_string,
-            file_name=f"checklist_{st.session_state.get('t1_f_num', 'export')}.json",
+            file_name=f"checklist_{f_num_view}.json",
             mime="application/json"
         )
-
