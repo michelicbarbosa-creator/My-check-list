@@ -33,7 +33,10 @@ def delete_project_from_db(project_id):
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(projects, f, indent=4, ensure_ascii=False)
 
-# 1. INICIALIZAÇÃO DE MEMÓRIA GLOBAL
+# 1. INICIALIZAÇÃO CONTROLANDO O COCKPIT DE LIMPEZA (Garante ecrã em branco)
+if 'generation_id' not in st.session_state:
+    st.session_state['generation_id'] = 0
+
 if 'materials_list' not in st.session_state: st.session_state.materials_list = []
 if 'sizes_history' not in st.session_state: st.session_state.sizes_history = []
 if 'institute_shipments' not in st.session_state: st.session_state.institute_shipments = []
@@ -53,7 +56,7 @@ def check_expiration(exp_date):
     elif (exp_date - today).days == 1: return "🟨 WARNING: Expires Tomorrow!", "warning"
     else: return "🟩 Valid Document", "success"
 
-# --- PAINEL DE PESQUISA NA NUVEM (Histórico Avançado) ---
+# --- PAINEL DE PESQUISA NA NUVEM (Histórico) ---
 st.sidebar.header("🔍 Search & Load Project")
 all_saved_projects = load_all_projects()
 if all_saved_projects:
@@ -66,14 +69,11 @@ if all_saved_projects:
         with col_side1:
             if st.button("📂 Load Project"):
                 p_data = all_saved_projects[selected_proj]
-                
-                # Restaurar Tabelas das Abas 2, 4 e 5
                 st.session_state.materials_list = p_data.get("materials", [])
                 st.session_state.sizes_history = p_data.get("production_sizes_and_rolls", [])
                 st.session_state.institute_shipments = p_data.get("shipments", [])
                 st.session_state.mockups_v2_history = p_data.get("mockups", [])
                 
-                # Restaurar Aba 1
                 info = p_data.get("project_info", {})
                 st.session_state['t1_p_name'] = info.get("name", "")
                 st.session_state['t1_f_num'] = info.get("folder", "")
@@ -81,12 +81,12 @@ if all_saved_projects:
                 st.session_state['t1_art'] = info.get("article_name_t1", "")
                 st.session_state['t1_cert'] = info.get("certification_type", "NEW CERTIFICATION")
                 st.session_state['t1_bom_notes'] = info.get("bom_notes", "")
+                
                 st.session_state['t1_oeti'] = "OETI" in info.get("institutes", [])
                 st.session_state['t1_testex'] = "TESTEX" in info.get("institutes", [])
                 st.session_state['t1_hoh'] = "HOHENSTEIN" in info.get("institutes", [])
                 st.session_state['t1_add_bom'] = info.get("add_bom", False)
                 
-                # CORREÇÃO: Restaurar Aba 3 (Technical Documentation)
                 tech = p_data.get("technical_documentation", {})
                 st.session_state['t3_splag'] = tech.get("splag", "NO ")
                 st.session_state['t3_conf'] = tech.get("confirmed", "NO ")
@@ -95,7 +95,6 @@ if all_saved_projects:
                 st.session_state['t3_folder'] = tech.get("saved_folder", "NO ")
                 st.session_state['t3_label'] = tech.get("label_status", "NO ")
                 
-                # CORREÇÃO: Restaurar Status Gerais da Aba 4
                 garment = p_data.get("sample_garment_status", {})
                 st.session_state['t4_in_prog'] = garment.get("inprogress", "NO ")
                 st.session_state['t4_rev'] = garment.get("revision", "NO ")
@@ -114,10 +113,31 @@ if all_saved_projects:
 else:
     st.sidebar.info("No projects saved in cloud database yet.")
 
+# CORREÇÃO DEFINITIVA DO BOTÃO NOVO PROJETO: Altera a geração visual e limpa tudo
 if st.sidebar.button("➕ Start New Project Blank"):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
+    # Limpa as listas de dados das tabelas
+    st.session_state.materials_list = []
+    st.session_state.sizes_history = []
+    st.session_state.institute_shipments = []
+    st.session_state.mockups_v2_history = []
+    
+    # Limpa os dados de texto
+    st.session_state['t1_p_name'] = ""
+    st.session_state['t1_f_num'] = ""
+    st.session_state['t1_m_name'] = ""
+    st.session_state['t1_art'] = ""
+    st.session_state['t1_bom_notes'] = ""
+    st.session_state['t1_oeti'] = False
+    st.session_state['t1_testex'] = False
+    st.session_state['t1_hoh'] = False
+    st.session_state['t1_add_bom'] = False
+    
+    # Muda o ID de geração. Isto força o Streamlit a destruir os inputs antigos e criar caixas novas em branco
+    st.session_state['generation_id'] += 1
     st.rerun()
+
+# Criamos um sufixo baseado no ID de geração para atualizar as caixas visuais
+gen = st.session_state['generation_id']
 
 # --- ESTRUTURA DAS 6 ABAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
@@ -128,10 +148,11 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 with tab1:
     st.header("Project Identification")
     
-    project_name = st.text_input("PROJECT NAME", value=st.session_state.get('t1_p_name', ''), key="t1_p_name_input")
-    folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value=st.session_state.get('t1_f_num', ''), key="t1_f_num_input")
-    model_name = st.text_input("MODEL", value=st.session_state.get('t1_m_name', ''), key="t1_m_name_input")
-    article_name_t1 = st.text_input("ARTICLE", value=st.session_state.get('t1_art', ''), key="t1_art_input")
+    # O uso do sufixo f"_{gen}" força as caixas a esvaziarem por completo no clique do botão
+    project_name = st.text_input("PROJECT NAME", value=st.session_state['t1_p_name'], key=f"t1_p_name_input_{gen}")
+    folder_number = st.text_input("NUMBER OF THE PROJECT FOLDER", value=st.session_state['t1_f_num'], key=f"t1_f_num_input_{gen}")
+    model_name = st.text_input("MODEL", value=st.session_state['t1_m_name'], key=f"t1_m_name_input_{gen}")
+    article_name_t1 = st.text_input("ARTICLE", value=st.session_state['t1_art'], key=f"t1_art_input_{gen}")
     
     st.session_state['t1_p_name'] = project_name
     st.session_state['t1_f_num'] = folder_number
@@ -139,46 +160,46 @@ with tab1:
     st.session_state['t1_art'] = article_name_t1
     
     cert_idx = ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"].index(st.session_state.get('t1_cert', "NEW CERTIFICATION")) if st.session_state.get('t1_cert', "NEW CERTIFICATION") in ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"] else 0
-    cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"], index=cert_idx, key="t1_cert_input")
+    cert_type = st.radio("CERTIFICATION TYPE", ["NEW CERTIFICATION", "APPLICATION OF EXTENSION", "RECERTIFICATION"], index=cert_idx, key=f"t1_cert_input_{gen}")
     st.session_state['t1_cert'] = cert_type
     
     st.markdown("---")
     st.subheader("🏛️ TARGET CERTIFICATION INSTITUTE")
-    inst_oeti = st.checkbox("OETI", value=st.session_state.get('t1_oeti', False), key="t1_oeti_input")
-    inst_testex = st.checkbox("TESTEX", value=st.session_state.get('t1_testex', False), key="t1_testex_input")
-    inst_hohenstein = st.checkbox("HOHENSTEIN", value=st.session_state.get('t1_hoh', False), key="t1_hoh_input")
+    inst_oeti = st.checkbox("OETI", value=st.session_state.get('t1_oeti', False), key=f"t1_oeti_input_{gen}")
+    inst_testex = st.checkbox("TESTEX", value=st.session_state.get('t1_testex', False), key=f"t1_testex_input_{gen}")
+    inst_hohenstein = st.checkbox("HOHENSTEIN", value=st.session_state.get('t1_hoh', False), key=f"t1_hoh_input_{gen}")
     
     st.session_state['t1_oeti'] = inst_oeti
     st.session_state['t1_testex'] = inst_testex
     st.session_state['t1_hoh'] = inst_hohenstein
     
     st.markdown("---")
-    add_bom = st.checkbox("ADD BOM (Bill of Materials)", value=st.session_state.get('t1_add_bom', False), key="t1_add_bom_input")
+    add_bom = st.checkbox("ADD BOM (Bill of Materials)", value=st.session_state.get('t1_add_bom', False), key=f"t1_add_bom_input_{gen}")
     st.session_state['t1_add_bom'] = add_bom
-    bom_notes = st.text_area("BOM NOTES / REVISIONS", value=st.session_state.get('t1_bom_notes', ''), key="t1_bom_notes_input")
+    bom_notes = st.text_area("BOM NOTES / REVISIONS", value=st.session_state['t1_bom_notes'], key=f"t1_bom_notes_input_{gen}")
     st.session_state['t1_bom_notes'] = bom_notes
 # ================= TAB 2: DOCUMENTS =================
 with tab2:
     st.header("Materials & Document Expiration")
     st.subheader("Add Material Item")
-    material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"], key="t2_mat_type")
+    material = st.selectbox("MATERIAL TYPE", ["ZIPPER", "VELCRO", "ELASTIC", "REFLEX", "BUTTON", "FABRIC", "LINING", "THREAD"], key=f"t2_mat_type_{gen}")
     
     default_article_name = st.session_state.get("t1_art", "")
-    doc_art_name = st.text_input("ARTICLE NAME (for this material)", value=default_article_name, key="t2_art_name")
-    doc_art_num = st.text_input("ARTICLE NUMBER", value="", key="t2_art_num")
+    doc_art_name = st.text_input("ARTICLE NAME (for this material)", value=default_article_name, key=f"t2_art_name_{gen}")
+    doc_art_num = st.text_input("ARTICLE NUMBER", value="", key=f"t2_art_num_{gen}")
     
     col1, col2 = st.columns(2)
-    with col1: oekotex = st.checkbox("OEKO-TEX Compliance", key="t2_oeko")
-    with col2: text_report = st.checkbox("TEXT REPORT Attached", key="t2_report")
+    with col1: oekotex = st.checkbox("OEKO-TEX Compliance", key=f"t2_oeko_{gen}")
+    with col2: text_report = st.checkbox("TEXT REPORT Attached", key=f"t2_report_{gen}")
     
-    expiration_date = st.date_input("EXPIRATION DATE", value=datetime.date.today() + datetime.timedelta(days=2), key="t2_exp_date")
+    expiration_date = st.date_input("EXPIRATION DATE", value=datetime.date.today() + datetime.timedelta(days=2), key=f"t2_exp_date_{gen}")
     alert_msg, alert_type = check_expiration(expiration_date)
     
     if alert_type == "error": st.error(alert_msg)
     elif alert_type == "warning": st.warning(alert_msg)
     else: st.success(alert_msg)
     
-    if st.button("➕ Add Material to Project List", key="t2_add_btn"):
+    if st.button("➕ Add Material to Project List", key=f"t2_add_btn_{gen}"):
         st.session_state.materials_list.append({
             "type": material, "name": doc_art_name, "number": doc_art_num,
             "oekotex": "YES" if oekotex else "NO", "report": "YES" if text_report else "NO",
@@ -188,7 +209,7 @@ with tab2:
 
     st.markdown("---")
     st.subheader("📋  Project Materials List")
-    edited_materials = st.data_editor(st.session_state.materials_list, use_container_width=True, num_rows="dynamic", key="editable_materials_table")
+    edited_materials = st.data_editor(st.session_state.materials_list, use_container_width=True, num_rows="dynamic", key=f"editable_materials_table_{gen}")
     st.session_state.materials_list = edited_materials
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
@@ -198,12 +219,12 @@ with tab3:
         val = st.session_state.get(session_key, "NO ")
         return status_options.index(val) if val in status_options else 0
 
-    t_splag = st.selectbox("TECHNICAL DOCUMENTATION SPLAG", status_options, index=get_status_idx('t3_splag'), key="t3_splag_input")
-    t_confirmed = st.selectbox("TECHNICAL DOCUMENTATION CONFIRMED", status_options, index=get_status_idx('t3_conf'), key="t3_conf_input")
-    m_chart = st.selectbox("MEASUREMENT CHART", status_options, index=get_status_idx('t3_chart'), key="t3_chart_input")
-    m_check = st.selectbox("MEASUREMENT CHECK OF SAMPLE", status_options, index=get_status_idx('t3_check'), key="t3_check_input")
-    saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=get_status_idx('t3_folder'), key="t3_folder_input")
-    label_status = st.selectbox("LABEL", status_options, index=get_status_idx('t3_label'), key="t3_label_input")
+    t_splag = st.selectbox("TECHNICAL DOCUMENTATION SPLAG", status_options, index=get_status_idx('t3_splag'), key=f"t3_splag_input_{gen}")
+    t_confirmed = st.selectbox("TECHNICAL DOCUMENTATION CONFIRMED", status_options, index=get_status_idx('t3_conf'), key=f"t3_conf_input_{gen}")
+    m_chart = st.selectbox("MEASUREMENT CHART", status_options, index=get_status_idx('t3_chart'), key=f"t3_chart_input_{gen}")
+    m_check = st.selectbox("MEASUREMENT CHECK OF SAMPLE", status_options, index=get_status_idx('t3_check'), key=f"t3_check_input_{gen}")
+    saved_folder = st.selectbox("SAVED IN FOLDER", status_options, index=get_status_idx('t3_folder'), key=f"t3_folder_input_{gen}")
+    label_status = st.selectbox("LABEL", status_options, index=get_status_idx('t3_label'), key=f"t3_label_input_{gen}")
     
     st.session_state['t3_splag'] = t_splag
     st.session_state['t3_conf'] = t_confirmed
@@ -218,13 +239,13 @@ with tab4:
     st.subheader("⚙️ General Checklist Status")
     col_s1, col_s2, col_s3 = st.columns(3)
     with col_s1:
-        s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=get_status_idx('t4_in_prog'), key="t4_in_prog_input")
-        s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=get_status_idx('t4_rev'), key="t4_rev_input")
+        s_inprogress = st.selectbox("SAMPLE IN PROGRESS", status_options, index=get_status_idx('t4_in_prog'), key=f"t4_in_prog_input_{gen}")
+        s_revision = st.selectbox("SAMPLE REVISION AT KUNG", status_options, index=get_status_idx('t4_rev'), key=f"t4_rev_input_{gen}")
     with col_s2:
-        s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=get_status_idx('t4_conf'), key="t4_conf_input")
-        s_sent_oeti = st.selectbox("SAMPLE SENT TO OETI", status_options, index=get_status_idx('t4_sent'), key="t4_sent_input")
+        s_confirmed = st.selectbox("SAMPLE CONFIRMED", status_options, index=get_status_idx('t4_conf'), key=f"t4_conf_input_{gen}")
+        s_sent_oeti = st.selectbox("SAMPLE SENT TO OETI", status_options, index=get_status_idx('t4_sent'), key=f"t4_sent_input_{gen}")
     with col_s3:
-        s_excel = st.selectbox("SAMPLE ENTERED IN OVERVIEW (EXCEL)", status_options, index=get_status_idx('t4_excel'), key="t4_excel_input")
+        s_excel = st.selectbox("SAMPLE ENTERED IN OVERVIEW (EXCEL)", status_options, index=get_status_idx('t4_excel'), key=f"t4_excel_input_{gen}")
 
     st.session_state['t4_in_prog'] = s_inprogress
     st.session_state['t4_rev'] = s_revision
@@ -237,41 +258,41 @@ with tab4:
     
     with col_sizes:
         st.subheader("📦 Production ")
-        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="", key="t4_sz_ord")
-        input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
-        input_size = st.text_input("SIZE (e.g., M, L, 42)", value="", key="t4_sz_val")
-        input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
+        input_order_num = st.text_input("ORDER NUMBER (Order No.)", value="", key=f"t4_sz_ord_{gen}")
+        input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key=f"t4_sz_qty_{gen}")
+        input_size = st.text_input("SIZE (e.g., M, L, 42)", value="", key=f"t4_sz_val_{gen}")
+        input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key=f"t4_sz_date_{gen}")
         
-        input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
-        input_lot_fabric = st.text_input("LOT FABRIC", value="", key="t4_lot_fab")
-        input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key="t4_num_roll_ref")
+        input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key=f"t4_num_roll_fab_{gen}")
+        input_lot_fabric = st.text_input("LOT FABRIC", value="", key=f"t4_lot_fab_{gen}")
+        input_num_roll_reflex = st.text_input("NUMBER ROLL REFLEX", value="", key=f"t4_num_roll_ref_{gen}")
 
-        if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
+        if st.button("➕ Add Size Entry", key=f"t4_add_sz_btn_{gen}"):
             st.session_state.sizes_history.append({
                 "Order Number": input_order_num, "Qty": input_size_qty, "Size": input_size, "Date": str(input_size_date),
                 "Number Roll Fabric": input_num_roll_fabric, "Lot Fabric": input_lot_fabric, "Number Roll Reflex": input_num_roll_reflex
             })
             st.success("Size log entry recorded!")
             
-        edited_sizes = st.data_editor(st.session_state.sizes_history, use_container_width=True, num_rows="dynamic", key="editable_sizes_table")
+        edited_sizes = st.data_editor(st.session_state.sizes_history, use_container_width=True, num_rows="dynamic", key=f"editable_sizes_table_{gen}")
         st.session_state.sizes_history = edited_sizes
 
     with col_ship:
         st.subheader("🚚 Institute Shipment ")
-        ship_order = st.text_input("ORDER NUMBER", value="", key="t4_sh_ord")
-        ship_qty = st.number_input("QUANTITY SENT", min_value=1, value=1, key="t4_sh_qty")
-        ship_size = st.text_input("SIZE", value="", key="t4_sh_sz")
-        ship_fabric = st.text_input("MAIN FABRIC", value="", key="t4_sh_fab")
-        ship_date = st.date_input("SHIPMENT DATE", datetime.date.today(), key="t4_sh_dt")
-        ship_status = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t4_sh_st")
+        ship_order = st.text_input("ORDER NUMBER", value="", key=f"t4_sh_ord_{gen}")
+        ship_qty = st.number_input("QUANTITY SENT", min_value=1, value=1, key=f"t4_sh_qty_{gen}")
+        ship_size = st.text_input("SIZE", value="", key=f"t4_sh_sz_{gen}")
+        ship_fabric = st.text_input("MAIN FABRIC", value="", key=f"t4_sh_fab_{gen}")
+        ship_date = st.date_input("SHIPMENT DATE", datetime.date.today(), key=f"t4_sh_dt_{gen}")
+        ship_status = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key=f"t4_sh_st_{gen}")
         
-        if st.button("➕ Add Shipment to Institute", key="t4_add_sh_btn"):
+        if st.button("➕ Add Shipment to Institute", key=f"t4_add_sh_btn_{gen}"):
             st.session_state.institute_shipments.append({
                 "Order Number": ship_order, "Qty Sent": ship_qty, "Size": ship_size, "Main Fabric": ship_fabric, "Shipment Date": str(ship_date), "Status": ship_status
             })
             st.success("Shipment entry recorded!")
             
-        edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, num_rows="dynamic", key="editable_shipments_table")
+        edited_shipments = st.data_editor(st.session_state.institute_shipments, use_container_width=True, num_rows="dynamic", key=f"editable_shipments_table_{gen}")
         st.session_state.institute_shipments = edited_shipments
 # ================= TAB 5: SAMPLE MOCKUPS =================
 with tab5:
@@ -280,15 +301,15 @@ with tab5:
     
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value="", key="t5_part")
-        mockup_material = st.text_input("MATERIAL USED", value="", key="t5_mat")
-        mockup_ship_date = st.date_input("SHIPMENT DATE TO INSTITUTE", datetime.date.today(), key="t5_ship_date")
+        mockup_part = st.text_input("MOCKUP PART / COMPONENT (e.g., Seam, Pocket)", value="", key=f"t5_part_{gen}")
+        mockup_material = st.text_input("MATERIAL USED", value="", key=f"t5_mat_{gen}")
+        mockup_ship_date = st.date_input("SHIPMENT DATE TO INSTITUTE", datetime.date.today(), key=f"t5_ship_date_{gen}")
     with col_m2:
-        mockup_qty = st.number_input("MOCKUP QTY", min_value=1, value=1, key="t5_qty")
-        mockup_status = st.selectbox("MOCKUP STATUS", status_options, index=1, key="t5_status")
-        mockup_approval = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key="t5_approval")
+        mockup_qty = st.number_input("MOCKUP QTY", min_value=1, value=1, key=f"t5_qty_{gen}")
+        mockup_status = st.selectbox("MOCKUP STATUS", status_options, index=1, key=f"t5_status_{gen}")
+        mockup_approval = st.selectbox("APPROVAL STATUS", ["PENDING / EM AVALIAÇÃO", "🟩 APPROVED", "🟥 NOT APPROVED"], key=f"t5_approval_{gen}")
         
-    if st.button("➕ Add Mockup to Project", key="t5_add_btn"):
+    if st.button("➕ Add Mockup to Project", key=f"t5_add_btn_{gen}"):
         st.session_state.mockups_v2_history.append({
             "Component/Part": mockup_part, "Material": mockup_material, "Qty": mockup_qty, "Status": mockup_status,
             "Shipment Date": str(mockup_ship_date), "Approval": mockup_approval
@@ -297,7 +318,7 @@ with tab5:
         
     st.markdown("---")
     st.subheader("📋 Registered Mockups")
-    edited_mockups = st.data_editor(st.session_state.mockups_v2_history, use_container_width=True, num_rows="dynamic", key="editable_mockups_table")
+    edited_mockups = st.data_editor(st.session_state.mockups_v2_history, use_container_width=True, num_rows="dynamic", key=f"editable_mockups_table_{gen}")
     st.session_state.mockups_v2_history = edited_mockups
 # ================= TAB 6: PREVIEW & FINALISATION =================
 with tab6:
@@ -366,7 +387,6 @@ with tab6:
     
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     
-    # Montagem definitiva estruturada da base de dados salvando a Tab 3 e 4
     final_data = {
         "project_info": {
             "name": p_name_view, "folder": f_num_view, "model": m_name_view,
@@ -397,7 +417,7 @@ with tab6:
     }
     
     with col_btn1:
-        if st.button("☁️ Save Project to Cloud Database", key="t6_cloud_save"):
+        if st.button("☁️ Save Project to Cloud Database", key=f"t6_cloud_save_{gen}"):
             if p_name_view and f_num_view:
                 project_id = f"{f_num_view} - {p_name_view}"
                 save_project_to_db(project_id, final_data)
@@ -407,7 +427,7 @@ with tab6:
                 st.error("Please fill in Project Name and Folder Number in Tab 1 before saving.")
             
     with col_btn2:
-        if st.button("🖨️ Export PDF / Print Report", key="t6_print_pdf_btn"):
+        if st.button("🖨️ Export PDF / Print Report", key=f"t6_print_pdf_btn_{gen}"):
             st.components.v1.html("<script>window.parent.print();</script>", height=0)
             st.info("Opening system print dialog...")
             
@@ -415,6 +435,7 @@ with tab6:
         json_string = json.dumps(final_data, indent=4, ensure_ascii=False)
         st.download_button(
             label="📥 Download JSON Backup", data=json_string,
-            file_name=f"checklist_{f_num_view if f_num_view else 'export'}.json", mime="application/json"
+            file_name=f"checklist_{f_num_view if f_num_view else 'export'}.json", mime="application/json",
+            key=f"t6_json_dl_btn_{gen}"
         )
 
