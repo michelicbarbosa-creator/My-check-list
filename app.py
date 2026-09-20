@@ -102,7 +102,6 @@ with tab2:
         st.dataframe(st.session_state.materials_list, use_container_width=True)
         if st.button("🗑️ Clear Materials List", key="t2_clear_btn"):
             st.session_state.materials_list = []
-            st.rerun()
 
 # ================= TAB 3: TECHNICAL DOCUMENTATION =================
 with tab3:
@@ -145,7 +144,6 @@ with tab4:
                 "Date": str(input_size_date)
             })
             st.success("Size log entry recorded!")
-            st.rerun()
             
         if st.session_state.sizes_history:
             st.dataframe(st.session_state.sizes_history, use_container_width=True)
@@ -169,7 +167,6 @@ with tab4:
                 "Status": ship_status
             })
             st.success("Shipment entry recorded!")
-            st.rerun()
             
         if st.session_state.institute_shipments:
             st.dataframe(st.session_state.institute_shipments, use_container_width=True)
@@ -195,8 +192,25 @@ with tab5:
             "Status": mockup_status
         })
         st.success("Mockup added successfully!")
-        st.rerun()
         
     st.markdown("---")
     st.subheader("📋 Registered Mockups")
     if st.session_state.mockups_v2_history:
+        st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)
+        ================= TAB 6: PREVIEW & FINALISATION =================
+        with tab6:st.header("Project Overview & Final Summary")st.subheader("📌 General Project Info")st.write(f"Project Name: {st.session_state.get('t1_p_name', project_name)}")st.write(f"Folder Number: {st.session_state.get('t1_f_num', folder_number)}")st.write(f"Model: {st.session_state.get('t1_m_name', model_name)}")st.write(f"Type: {st.session_state.get('t1_cert', cert_type)}")institutes = []
+        if st.session_state.get('t1_oeti'): institutes.append("OETI")
+            if st.session_state.get('t1_testex'): institutes.append("TESTEX")
+              if st.session_state.get('t1_hoh'): institutes.append("HOHENSTEIN")st.write(f"Target Institutes: {', '.join(institutes)
+               if institutes 
+               else 'None Selected'}")st.markdown("---")col_summary1, col_summary2 = st.columns(2)
+        with col_summary1:st.subheader("🗒️ Materials & Expiration Summary")
+            if st.session_state.materials_list:st.dataframe(st.session_state.materials_list, use_container_width=True)
+                else:st.info("No materials added yet.")st.subheader("📐 Production Sizes")
+        if st.session_state.sizes_history:st.dataframe(st.session_state.sizes_history, use_container_width=True)
+            else:st.info("No production sizes recorded.")
+                with col_summary2:st.subheader("🚚 Institute Shipments")
+                    if st.session_state.institute_shipments:st.dataframe(st.session_state.institute_shipments, use_container_width=True)
+                        else:st.info("No shipments recorded.")st.subheader("🎨 Mockups Status")
+        if st.session_state.mockups_v2_history:st.dataframe(st.session_state.mockups_v2_history, use_container_width=True)
+            else:st.info("No mockups added.")st.markdown("---")st.subheader("💾 Export Options")final_data = {"project_info": {"name": st.session_state.get('t1_p_name', project_name),"folder": st.session_state.get('t1_f_num', folder_number),"model": st.session_state.get('t1_m_name', model_name),"certification_type": st.session_state.get('t1_cert', cert_type),"institutes": institutes,"bom_notes": st.session_state.get('t1_bom_notes', bom_notes)},"technical_documentation": {"splag": t_splag,"confirmed": t_confirmed,"measurement_chart": m_chart,"measurement_check": m_check,"saved_folder": saved_folder,"label_status": label_status},"materials": st.session_state.materials_list,"production_sizes": st.session_state.sizes_history,"shipments": st.session_state.institute_shipments,"mockups": st.session_state.mockups_v2_history}json_string = json.dumps(final_data, indent=4, ensure_ascii=False)st.download_button(label="📥 Download Checklist Data (JSON)",data=json_string,file_name=f"checklist_{st.session_state.get('t1_f_num', 'export')}.json",mime="application/json")
