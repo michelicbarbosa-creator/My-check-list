@@ -345,42 +345,48 @@ with tab5:
 with tab6:
     st.header("Project Overview & Final Summary")
     
-    # --- ESTILIZAÇÃO CSS DE ALTA COMPACTAÇÃO REESTRUTURADA PARA IMPRESSÃO ---
+    # --- ESTILIZAÇÃO CSS PROFISSIONAL - COMPACTAÇÃO ANTI-QUEBRA DE PÁGINA ---
     st.markdown(
         """
         <style>
         @media print {
-            /* Esconde menus de navegação do Streamlit, barras laterais e botões */
-            iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"] {
+            /* 1. Esconde menus de navegação do Streamlit, barras laterais e botões */
+            iframe, button, [data-testid="stSidebar"], header, footer, .stButton, [data-testid="stHeader"], [data-testid="stHeaderBlock"] {
                 display: none !important;
             }
-            /* Configuração da folha com aproveitamento máximo de espaço horizontal */
+            /* 2. Configuração da folha com aproveitamento máximo de espaço horizontal */
             @page { 
                 size: A4 landscape; 
                 margin: 0.6cm !important; 
             }
-            /* CORREÇÃO DO LOGO ISOLADO: Encolhe a imagem do logo apenas no papel para não forçar quebra de página */
+            /* 3. CORREÇÃO CRÍTICA DO LOGO ISOLADO: Impede quebras de página no topo */
+            [data-testid="stImage"], [data-testid="stElementContainer"], .element-container {
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                display: block !important;
+            }
             [data-testid="stImage"] img, img {
-                max-width: 120px !important;
+                max-width: 140px !important;
                 height: auto !important;
                 margin: 0 auto !important;
                 display: block !important;
             }
-            /* Reduz o tamanho real mantendo os blocos juntos */
+            /* 4. Ajuste global do tamanho real mantendo os blocos unidos */
             .main .block-container { 
                 padding-top: 0cm !important; 
                 padding-bottom: 0cm !important; 
                 max-width: 100% !important; 
                 transform: scale(0.85) !important; 
                 transform-origin: top left !important;
-                margin-top: -10px !important; 
+                margin-top: -20px !important; 
             }
-            /* Junta as colunas paralelas do monitor para empilharem sem quebrar página */
+            /* 5. Força as tabelas e colunas a empilharem sem saltar de página à toa */
             [data-testid="stHorizontalBlock"] { 
                 display: block !important; 
                 float: none !important; 
                 width: 100% !important; 
                 page-break-inside: avoid !important;
+                page-break-after: auto !important;
             }
             [data-testid="column"] { 
                 display: block !important; 
@@ -388,10 +394,10 @@ with tab6:
                 max-width: 100% !important; 
                 float: none !important; 
                 padding: 0 !important; 
-                margin-bottom: 12px !important; 
+                margin-bottom: 15px !important; 
                 page-break-inside: avoid !important; 
             }
-            /* Ajuste compacto das tabelas de dados */
+            /* 6. Ajuste compacto das tabelas de dados */
             .stDataFrame, table { 
                 width: 100% !important; 
                 margin-top: 2px !important; 
@@ -399,11 +405,12 @@ with tab6:
             }
             h1, h2, h3 { 
                 color: #00519E !important; 
-                margin-top: 6px !important; 
-                margin-bottom: 2px !important;
+                margin-top: 8px !important; 
+                margin-bottom: 4px !important;
                 page-break-after: avoid !important; 
+                page-break-before: avoid !important;
             }
-            p, span, div {
+            p, span, div, text {
                 page-break-inside: avoid !important;
             }
         }
