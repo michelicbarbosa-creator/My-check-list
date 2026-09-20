@@ -152,7 +152,7 @@ with tab4:
         st.subheader("📦 Production ")
         input_order_num = st.text_input("ORDER NUMBER (Order No.)", value=" ", key="t4_sz_ord")
         input_size_qty = st.number_input("QUANTITY (Qty)", min_value=1, value=1, key="t4_sz_qty")
-        input_size = st.text_input("SIZE (e.g., P, M, L,G, 42)", value=" ", key="t4_sz_val")
+        input_size = st.text_input("SIZE ", value=" ", key="t4_sz_val")
         input_size_date = st.date_input("PRODUCTION DATE", datetime.date.today(), key="t4_sz_date")
         
         input_num_roll_fabric = st.text_input("NUMBER ROLL FABRIC", value="", key="t4_num_roll_fab")
