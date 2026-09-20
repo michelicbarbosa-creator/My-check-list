@@ -20,7 +20,7 @@ if 'mockups_v2_history' not in st.session_state:
 status_options = [
     "NO NEED", 
     "IN PROGRESS ", 
-    "GREEN / OK "
+    " OK "
 ]
 
 # VALORES PADRÃO DA SESSÃO
