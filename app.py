@@ -162,7 +162,7 @@ with tab4:
         if st.button("➕ Add Size Entry", key="t4_add_sz_btn"):
             st.session_state.sizes_history.append({
                 "Order Number": input_order_num, "Qty": input_size_qty, "Size": input_size, "Date": str(input_size_date),
-                "Number Roll Fabric": input_num_roll_fabric, "Parti Fabric": input_parti_fabric, "Number Roll Reflex": input_num_roll_reflex
+                "Number Roll Fabric": input_num_roll_fabric, "Lot. Fabric": input_parti_fabric, "Number Roll Reflex": input_num_roll_reflex
             })
             st.success("Size log entry recorded!")
             
